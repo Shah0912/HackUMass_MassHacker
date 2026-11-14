@@ -1,0 +1,257 @@
+{
+  "valid": true,
+  "issues": [],
+  "order": [
+    "t1",
+    "t10",
+    "t2",
+    "t3",
+    "t11",
+    "t4",
+    "t5",
+    "t13",
+    "t6",
+    "t7",
+    "t8",
+    "t9",
+    "t12"
+  ],
+  "criticalPath": [
+    "t1",
+    "t3",
+    "t6",
+    "t8",
+    "t9",
+    "t12"
+  ],
+  "durationHours": 20,
+  "availableHours": 13.5,
+  "bufferHours": -6.5,
+  "verdict": "late",
+  "tasks": {
+    "t1": {
+      "taskId": "t1",
+      "remainingHours": 4,
+      "earliestStart": 0,
+      "earliestFinish": 4,
+      "latestStart": 0,
+      "latestFinish": 4,
+      "slackHours": 0,
+      "isCritical": true,
+      "downstreamCount": 9
+    },
+    "t10": {
+      "taskId": "t10",
+      "remainingHours": 1,
+      "earliestStart": 0,
+      "earliestFinish": 1,
+      "latestStart": 19,
+      "latestFinish": 20,
+      "slackHours": 19,
+      "isCritical": false,
+      "downstreamCount": 0
+    },
+    "t2": {
+      "taskId": "t2",
+      "remainingHours": 3,
+      "earliestStart": 4,
+      "earliestFinish": 7,
+      "latestStart": 8,
+      "latestFinish": 11,
+      "slackHours": 4,
+      "isCritical": false,
+      "downstreamCount": 4
+    },
+    "t3": {
+      "taskId": "t3",
+      "remainingHours": 6,
+      "earliestStart": 4,
+      "earliestFinish": 10,
+      "latestStart": 4,
+      "latestFinish": 10,
+      "slackHours": 0,
+      "isCritical": true,
+      "downstreamCount": 5
+    },
+    "t11": {
+      "taskId": "t11",
+      "remainingHours": 1,
+      "earliestStart": 10,
+      "earliestFinish": 11,
+      "latestStart": 19,
+      "latestFinish": 20,
+      "slackHours": 9,
+      "isCritical": false,
+      "downstreamCount": 0
+    },
+    "t4": {
+      "taskId": "t4",
+      "remainingHours": 2,
+      "earliestStart": 4,
+      "earliestFinish": 6,
+      "latestStart": 18,
+      "latestFinish": 20,
+      "slackHours": 14,
+      "isCritical": false,
+      "downstreamCount": 0
+    },
+    "t5": {
+      "taskId": "t5",
+      "remainingHours": 2,
+      "earliestStart": 0,
+      "earliestFinish": 2,
+      "latestStart": 8,
+      "latestFinish": 10,
+      "slackHours": 8,
+      "isCritical": false,
+      "downstreamCount": 6
+    },
+    "t13": {
+      "taskId": "t13",
+      "remainingHours": 1.5,
+      "earliestStart": 2,
+      "earliestFinish": 3.5,
+      "latestStart": 18.5,
+      "latestFinish": 20,
+      "slackHours": 16.5,
+      "isCritical": false,
+      "downstreamCount": 0
+    },
+    "t6": {
+      "taskId": "t6",
+      "remainingHours": 3,
+      "earliestStart": 10,
+      "earliestFinish": 13,
+      "latestStart": 10,
+      "latestFinish": 13,
+      "slackHours": 0,
+      "isCritical": true,
+      "downstreamCount": 3
+    },
+    "t7": {
+      "taskId": "t7",
+      "remainingHours": 2,
+      "earliestStart": 7,
+      "earliestFinish": 9,
+      "latestStart": 11,
+      "latestFinish": 13,
+      "slackHours": 4,
+      "isCritical": false,
+      "downstreamCount": 3
+    },
+    "t8": {
+      "taskId": "t8",
+      "remainingHours": 3,
+      "earliestStart": 13,
+      "earliestFinish": 16,
+      "latestStart": 13,
+      "latestFinish": 16,
+      "slackHours": 0,
+      "isCritical": true,
+      "downstreamCount": 2
+    },
+    "t9": {
+      "taskId": "t9",
+      "remainingHours": 2,
+      "earliestStart": 16,
+      "earliestFinish": 18,
+      "latestStart": 16,
+      "latestFinish": 18,
+      "slackHours": 0,
+      "isCritical": true,
+      "downstreamCount": 1
+    },
+    "t12": {
+      "taskId": "t12",
+      "remainingHours": 2,
+      "earliestStart": 18,
+      "earliestFinish": 20,
+      "latestStart": 18,
+      "latestFinish": 20,
+      "slackHours": 0,
+      "isCritical": true,
+      "downstreamCount": 0
+    }
+  },
+  "members": {
+    "m1": {
+      "memberId": "m1",
+      "openTaskCount": 3,
+      "remainingHours": 13,
+      "criticalHours": 13,
+      "capacityHours": 9,
+      "loadRatio": 1.4444444444444444
+    },
+    "m2": {
+      "memberId": "m2",
+      "openTaskCount": 3,
+      "remainingHours": 6,
+      "criticalHours": 0,
+      "capacityHours": 9,
+      "loadRatio": 0.6666666666666666
+    },
+    "m3": {
+      "memberId": "m3",
+      "openTaskCount": 3,
+      "remainingHours": 5,
+      "criticalHours": 2,
+      "capacityHours": 6.75,
+      "loadRatio": 0.7407407407407407
+    },
+    "m4": {
+      "memberId": "m4",
+      "openTaskCount": 3,
+      "remainingHours": 7,
+      "criticalHours": 5,
+      "capacityHours": 9,
+      "loadRatio": 0.7777777777777778
+    }
+  },
+  "bottleneckTaskId": "t1",
+  "risks": [
+    {
+      "id": "late",
+      "kind": "late",
+      "severity": "high",
+      "title": "Late for the deadline",
+      "detail": "Critical path is 20h but only 13.5h are available (6.5h late).",
+      "taskIds": [
+        "t1",
+        "t3",
+        "t6",
+        "t8",
+        "t9",
+        "t12"
+      ],
+      "memberIds": []
+    },
+    {
+      "id": "person_overload-m1",
+      "kind": "person_overload",
+      "severity": "high",
+      "title": "Alex is overloaded",
+      "detail": "Alex has 13h remaining against 9h capacity.",
+      "taskIds": [
+        "t1",
+        "t3",
+        "t8"
+      ],
+      "memberIds": [
+        "m1"
+      ]
+    },
+    {
+      "id": "task_bottleneck-t1",
+      "kind": "task_bottleneck",
+      "severity": "high",
+      "title": "Design DB schema blocks the project",
+      "detail": "Design DB schema blocks 9 unfinished tasks; owned by Alex; status todo.",
+      "taskIds": [
+        "t1"
+      ],
+      "memberIds": [
+        "m1"
+      ]
+    }
+  ]
+}

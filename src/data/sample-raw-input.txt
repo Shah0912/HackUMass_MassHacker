@@ -1,0 +1,23 @@
+[yesterday 9:41 PM] Riley: ok so for the hackathon demo app — i'll start the UI shell tonight, don't wait on me
+
+[yesterday 9:44 PM] Alex: cool. i'm locking the DB schema first so everyone can build against it. give me ~4h
+
+[yesterday 9:46 PM] Jordan: auth after we know the user table yeah? i can do that once schema's in
+
+[yesterday 10:02 PM] Sam: i'll seed fixtures after the schema lands, shouldn't take long
+
+[yesterday 10:05 PM] Alex: once schema is done i can own the API routes. that's the big chunk, maybe 6 hours
+
+[yesterday 10:12 PM] Riley: when API is up i'll wire the UI to it. also need login screens whenever jordan finishes auth
+
+[yesterday 10:18 PM] Jordan: CORS will bite us the second the UI hits the API btw — i'll fix that after routes exist
+
+[today 8:15 AM] Sam: README whenever, low priority. i can also push staging once tests are green
+
+[today 8:22 AM] Alex: someone should smoke-test / run integration tests before we demo… i guess that's me after UI+auth are wired?
+
+[today 8:30 AM] Riley: need a dry run on staging before judges. polish the landing copy too? nobody owns that yet
+
+[today 8:41 AM] Jordan: wait are we blocked on schema still? yes lol. alex please
+
+[today 9:01 AM] Sam: seed data still waiting on you alex. everything kinda waits on the schema

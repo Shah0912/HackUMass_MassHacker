@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "id": "00000000-0000-4000-8000-000000000001",
+  "name": "Hackathon demo app",
+  "deadline": "2026-11-16T18:00:00-05:00",
+  "workHoursPerDay": 6,
+  "members": [
+    { "id": "m1", "name": "Alex", "hoursPerDay": 4, "color": "#2563eb" },
+    { "id": "m2", "name": "Jordan", "hoursPerDay": 4, "color": "#16a34a" },
+    { "id": "m3", "name": "Sam", "hoursPerDay": 3, "color": "#ca8a04" },
+    { "id": "m4", "name": "Riley", "hoursPerDay": 4, "color": "#db2777" }
+  ],
+  "tasks": [
+    {
+      "id": "t1",
+      "title": "Design DB schema",
+      "ownerId": "m1",
+      "estimateHours": 4,
+      "status": "todo",
+      "dependsOn": [],
+      "source": "ai",
+      "confidence": "high",
+      "evidence": "Alex: I'll lock the schema tonight so everyone can build against it"
+    },
+    {
+      "id": "t2",
+      "title": "Set up auth",
+      "ownerId": "m2",
+      "estimateHours": 3,
+      "status": "todo",
+      "dependsOn": ["t1"],
+      "source": "ai",
+      "confidence": "medium",
+      "evidence": "Jordan: auth after we know the user table"
+    },
+    {
+      "id": "t3",
+      "title": "Build API routes",
+      "ownerId": "m1",
+      "estimateHours": 6,
+      "status": "todo",
+      "dependsOn": ["t1"],
+      "source": "ai",
+      "confidence": "high",
+      "evidence": "Alex: I can own the API once schema is done"
+    },
+    {
+      "id": "t4",
+      "title": "Write seed data",
+      "ownerId": "m3",
+      "estimateHours": 2,
+      "status": "todo",
+      "dependsOn": ["t1"],
+      "source": "ai",
+      "confidence": "high",
+      "evidence": "Sam: I'll seed fixtures after the schema lands"
+    },
+    {
+      "id": "t5",
+      "title": "Build UI shell",
+      "ownerId": "m4",
+      "estimateHours": 4,
+      "status": "in_progress",
+      "dependsOn": [],
+      "source": "ai",
+      "confidence": "high",
+      "evidence": "Riley: already sketching the shell in parallel"
+    },
+    {
+      "id": "t6",
+      "title": "Wire API to UI",
+      "ownerId": "m4",
+      "estimateHours": 3,
+      "status": "todo",
+      "dependsOn": ["t3", "t5"],
+      "source": "ai",
+      "confidence": "medium",
+      "estimateInferred": true,
+      "evidence": "Riley: hook UI once API is up"
+    },
+    {
+      "id": "t7",
+      "title": "Add auth to UI",
+      "ownerId": "m2",
+      "estimateHours": 2,
+      "status": "todo",
+      "dependsOn": ["t2", "t5"],
+      "source": "ai",
+      "confidence": "medium",
+      "evidence": "Jordan: login screens after auth backend"
+    },
+    {
+      "id": "t8",
+      "title": "Run integration tests",
+      "ownerId": "m1",
+      "estimateHours": 3,
+      "status": "todo",
+      "dependsOn": ["t6", "t7"],
+      "source": "ai",
+      "confidence": "low",
+      "estimateInferred": true,
+      "evidence": "someone should smoke-test before we demo"
+    },
+    {
+      "id": "t9",
+      "title": "Deploy staging",
+      "ownerId": "m3",
+      "estimateHours": 2,
+      "status": "todo",
+      "dependsOn": ["t8"],
+      "source": "ai",
+      "confidence": "high",
+      "evidence": "Sam: I can push staging after tests are green"
+    },
+    {
+      "id": "t10",
+      "title": "Write README",
+      "ownerId": "m3",
+      "estimateHours": 1,
+      "status": "todo",
+      "dependsOn": [],
+      "source": "ai",
+      "confidence": "high",
+      "evidence": "Sam: README whenever"
+    },
+    {
+      "id": "t11",
+      "title": "Fix CORS",
+      "ownerId": "m2",
+      "estimateHours": 1,
+      "status": "todo",
+      "dependsOn": ["t3"],
+      "source": "ai",
+      "confidence": "medium",
+      "evidence": "Jordan: CORS will bite us once UI hits the API"
+    },
+    {
+      "id": "t12",
+      "title": "Rehearse demo script",
+      "ownerId": "m4",
+      "estimateHours": 2,
+      "status": "todo",
+      "dependsOn": ["t9"],
+      "source": "user",
+      "evidence": "need a dry run on staging"
+    },
+    {
+      "id": "t13",
+      "title": "Polish landing copy",
+      "ownerId": null,
+      "estimateHours": 1.5,
+      "status": "todo",
+      "dependsOn": ["t5"],
+      "source": "ai",
+      "confidence": "low",
+      "estimateInferred": true,
+      "evidence": "we should tighten the landing text"
+    }
+  ],
+  "rawInput": "placeholder — replace with src/data/sample-raw-input.txt in P2 work",
+  "openQuestions": [],
+  "createdAt": "2026-11-14T12:00:00.000Z",
+  "updatedAt": "2026-11-14T12:00:00.000Z"
+}
