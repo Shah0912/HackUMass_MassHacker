@@ -4,7 +4,7 @@
 
 This is the hackathon build plan for 3 people in parallel. [BUILD_PLAN.md](BUILD_PLAN.md) is the post-demo roadmap. Where this file and the spec disagree, this file wins for the MVP.
 
-**Before the clock starts:** the repo runs (`npm run dev`, `npm run typecheck`), the Vercel project is linked and `ANTHROPIC_API_KEY` is set in Vercel's env settings. If any of that isn't true, do it first; it doesn't count against the 3 hours.
+**Before the clock starts:** the repo runs (`npm run dev`, `npm run typecheck`), the Vercel project is linked and `GEMINI_API_KEY` and/or `ANTHROPIC_API_KEY` (plus `AI_PROVIDER`) are set in Vercel's env settings and in your local `.env.local`; `npm run ai:smoke` passes. If any of that isn't true, do it first; it doesn't count against the 3 hours.
 
 ## The flow and the three interfaces
 
@@ -122,12 +122,11 @@ Every number in the text is read from the `Analysis`.
 
 ### Model call (P2)
 
-- Model `claude-opus-5-5` (the spec's ID; confirmed present in the installed SDK). `messages.create`, **no streaming**, `max_tokens` 8000.
-- Structured output through `output_config.format` with a JSON schema from the Zod extract schema. Check the exact shape against the installed SDK's types and the current docs, not memory.
-- Leave out `thinking`, `temperature`, prefill and `tool_choice`.
-- Check `stop_reason` first: `refusal` → `MODEL_REFUSED`, `max_tokens` → `MODEL_INVALID_OUTPUT`.
-- Abort after 60 s → `TIMEOUT`.
-- `ANTHROPIC_API_KEY` is read only in `api/`. Never put it in a `VITE_` variable.
+- **Done already:** `api/_lib/llm/` supports both Claude and Gemini behind one call. `AI_PROVIDER=claude|gemini` picks the provider (if unset, whichever key is present, Gemini first). Defaults: `gemini-2.5-flash` and `claude-opus-5-5`, overridable with `GEMINI_MODEL` / `CLAUDE_MODEL`.
+- P2 only writes: `const { data } = await generateJson(ExtractSchema, { system: SYSTEM_PROMPT, user: \`<project_text>${text}</project_text>\`, effort: 'medium' })`, then post-processes `data` into a `Project`.
+- `generateJson` already handles: JSON-schema structured output for both providers, `JSON.parse` + Zod validation, refusal/safety blocks → `MODEL_REFUSED`, out of tokens or bad JSON → `MODEL_INVALID_OUTPUT`, 429 → `RATE_LIMITED`, 60 s abort → `TIMEOUT`, metadata-only logging.
+- Catch `LlmError` in the endpoint and return `{ ok: false, error: { code, message, retryable } }`.
+- Keys are read only in `api/`. Never put them in a `VITE_` variable. Check a provider with `npm run ai:smoke -- claude` or `-- gemini`.
 
 ---
 
