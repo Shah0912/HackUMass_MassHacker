@@ -13,8 +13,10 @@ export interface Change {
 
 const FIELDS: (keyof Task)[] = ['ownerId', 'estimateHours', 'status', 'cut', 'dependsOn', 'title'];
 
+const memberName = (members: Project['members'], id: string | null | undefined) =>
+  (id ? members.find((m) => m.id === id)?.name : undefined) ?? 'Unassigned';
+
 export function diffProjects(base: Project, draft: Project): Change[] {
-  const name = (id: string | null | undefined) => base.members.find((m) => m.id === id)?.name ?? 'Unassigned';
   const baseById = new Map(base.tasks.map((t) => [t.id, t]));
   const changes: Change[] = [];
   for (const t of draft.tasks) {
@@ -31,7 +33,7 @@ export function diffProjects(base: Project, draft: Project): Change[] {
       const title = `"${b.title}"`;
       const text =
         f === 'ownerId'
-          ? `${title}: ${name(was as string | null)} → ${name(now as string | null)}`
+          ? `${title}: ${memberName(base.members, was as string | null)} → ${memberName(draft.members, now as string | null)}`
           : f === 'estimateHours'
             ? `${title}: ${fmtH(was as number)} → ${fmtH(now as number)}`
             : f === 'status'
@@ -51,12 +53,26 @@ export function diffProjects(base: Project, draft: Project): Change[] {
       });
     }
   }
+  const baseMemberIds = new Set(base.members.map((m) => m.id));
+  for (const m of draft.members) {
+    if (baseMemberIds.has(m.id)) continue;
+    changes.push({
+      key: `${m.id}:add-member`,
+      taskId: draft.tasks.find((t) => t.ownerId === m.id)?.id ?? '',
+      text: `Added ${m.name || 'a person'}`,
+      revert: (d) => ({
+        ...d,
+        members: d.members.filter((x) => x.id !== m.id),
+        tasks: d.tasks.map((t) => (t.ownerId === m.id ? { ...t, ownerId: null } : t)),
+      }),
+    });
+  }
   return changes;
 }
 
 export function WhatIfChanges({ changes, onUndo, onSelect }: { changes: Change[]; onUndo: (c: Change) => void; onSelect: (taskId: string) => void }) {
   if (changes.length === 0) {
-    return <p className="text-sm text-amber-900">No changes yet. Click a task to reassign, re-estimate, mark done or cut it. Nothing is saved until you apply.</p>;
+    return <p className="text-sm text-amber-900">No changes yet. Drag a task onto a person, or open a task to re-estimate, mark it done, or cut it. Nothing is saved until you apply.</p>;
   }
   return (
     <ul className="flex flex-wrap gap-1.5" aria-label="What-if changes">

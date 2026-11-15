@@ -5,7 +5,7 @@ import { fmtH } from '@/engine';
 import { Button, DependencyPicker, Dot, STATUS_LABEL, StatusBadge, cn } from '@/components/ui';
 import { OwnerSelect } from '@/components/people';
 import { addMember } from '@/store/taskOps';
-import { IconFlag, IconPin, IconQuote, IconScissors, IconTrash, IconUndo, IconX } from '@/components/icons';
+import { IconCheck, IconFlag, IconPin, IconQuote, IconScissors, IconTrash, IconUndo, IconX } from '@/components/icons';
 
 export function TaskDrawer({
   project,
@@ -167,7 +167,12 @@ export function TaskDrawer({
         )}
       </div>
 
-      <div className="flex gap-2 border-t border-slate-200 p-3">
+      <div className="flex flex-wrap gap-2 border-t border-slate-200 p-3">
+        {whatIf && task.status !== 'done' && (
+          <Button onClick={() => onChange({ status: 'done' })}>
+            <IconCheck size={14} /> Mark done
+          </Button>
+        )}
         <Button onClick={() => onChange({ cut: !task.cut })}>
           {task.cut ? <IconUndo size={14} /> : <IconScissors size={14} />} {task.cut ? 'Restore to scope' : 'Cut from scope'}
         </Button>

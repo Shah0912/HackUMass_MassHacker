@@ -1,4 +1,5 @@
 // Right panel: Risks (ranked, with fixes), People (load), Rescue (AI plan, code-verified).
+import { useRef, useState } from 'react';
 import type { Analysis, Project, Risk } from '@/core/types';
 import { fmtH } from '@/engine';
 import { Button, Dot, LoadBar, cn } from '@/components/ui';
@@ -7,6 +8,7 @@ import { RescuePanel } from '@/features/rescue/RescuePanel';
 import { AddPersonForm, OwnerSelect } from '@/components/people';
 import { addMember, updateTask } from '@/store/taskOps';
 import type { RescueAction } from '@/ai/client';
+import { isTaskDrag, readTaskDrag } from '@/features/whatif/drag';
 
 export type Tab = 'risks' | 'people' | 'rescue';
 
@@ -24,6 +26,8 @@ export function SidePanel(props: {
   onTryAction: (a: RescueAction) => void;
   readOnly: boolean;
   onEdit: (fn: (p: Project) => Project) => void;
+  /** What-if: person cards accept a dragged task. */
+  whatIf?: boolean;
 }) {
   const { tab, onTab } = props;
   const tabs: { id: Tab; label: string }[] = [
@@ -117,7 +121,9 @@ function Risks({ analysis, activeRiskId, onRisk, onTryFix, readOnly }: Parameter
   );
 }
 
-function People({ project, analysis, memberFilter, onMember, onEdit, readOnly }: Parameters<typeof SidePanel>[0]) {
+function People({ project, analysis, memberFilter, onMember, onEdit, readOnly, whatIf }: Parameters<typeof SidePanel>[0]) {
+  const [overId, setOverId] = useState<string | null>(null);
+  const skipClick = useRef(false);
   const addPerson = (name: string, hoursPerDay = 4): string | null => {
     let id: string | null = null;
     onEdit((p) => {
@@ -131,7 +137,11 @@ function People({ project, analysis, memberFilter, onMember, onEdit, readOnly }:
   const members = [...project.members].sort((a, b) => (analysis.members[b.id]?.loadRatio ?? 0) - (analysis.members[a.id]?.loadRatio ?? 0));
   return (
     <div className="space-y-2">
-      <p className="px-1 text-xs text-slate-500">Load = work left ÷ hours they have before the deadline. Click a person to show only their tasks.</p>
+      <p className="px-1 text-xs text-slate-500">
+        {whatIf
+          ? 'Drag a task onto a person to reassign it. Click a person to show only their tasks.'
+          : 'Load = work left ÷ hours they have before the deadline. Click a person to show only their tasks.'}
+      </p>
       {members.map((m) => {
         const mm = analysis.members[m.id];
         if (!mm) return null;
@@ -143,8 +153,36 @@ function People({ project, analysis, memberFilter, onMember, onEdit, readOnly }:
             key={m.id}
             type="button"
             aria-pressed={active}
-            onClick={() => onMember(active ? null : m.id)}
-            className={cn('block w-full rounded-lg bg-white p-3 text-left ring-1 transition', active ? 'ring-2 ring-blue-600' : 'ring-slate-200 hover:ring-slate-300')}
+            onClick={() => {
+              if (skipClick.current) {
+                skipClick.current = false;
+                return;
+              }
+              onMember(active ? null : m.id);
+            }}
+            onDragOver={(e) => {
+              if (!whatIf || !isTaskDrag(e.dataTransfer)) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+              setOverId(m.id);
+            }}
+            onDragLeave={(e) => {
+              if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+              setOverId((id) => (id === m.id ? null : id));
+            }}
+            onDrop={(e) => {
+              if (!whatIf) return;
+              const taskId = readTaskDrag(e.dataTransfer);
+              e.preventDefault();
+              setOverId(null);
+              if (!taskId) return;
+              skipClick.current = true;
+              onEdit((p) => updateTask(p, taskId, { ownerId: m.id }));
+            }}
+            className={cn(
+              'block w-full rounded-lg bg-white p-3 text-left ring-1 transition',
+              overId === m.id ? 'bg-amber-50 ring-2 ring-amber-500' : active ? 'ring-2 ring-blue-600' : 'ring-slate-200 hover:ring-slate-300',
+            )}
           >
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2 font-semibold text-slate-900">
@@ -157,6 +195,7 @@ function People({ project, analysis, memberFilter, onMember, onEdit, readOnly }:
             <div className="mt-2">
               <LoadBar ratio={mm.loadRatio} label={`${m.name}: ${pct ?? 'no capacity'}% load`} />
             </div>
+            {overId === m.id && <p className="mt-1.5 text-xs font-semibold text-amber-900">Drop to assign to {m.name}</p>}
             <p className="mt-1.5 text-xs text-slate-600">
               {fmtH(mm.remainingHours)} left of {fmtH(mm.capacityHours)} available · {mm.openTaskCount} open task{mm.openTaskCount === 1 ? '' : 's'}
               {mm.criticalHours > 0 && ` · ${fmtH(mm.criticalHours)} critical`}

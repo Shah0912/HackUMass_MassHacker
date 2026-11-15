@@ -152,6 +152,11 @@ function Dashboard({ project }: { project: Project }) {
                 selectedTaskId={selectedTaskId}
                 highlightTaskIds={highlightTaskIds}
                 onSelectTask={selectTask}
+                reassignable={!!whatIf}
+                onReassignDragStart={() => {
+                  setTab('people');
+                  selectTask(null);
+                }}
               />
             ) : (
               <EmptyState title="The graph can't be drawn yet">Fix the problems above, then come back.</EmptyState>
@@ -175,6 +180,7 @@ function Dashboard({ project }: { project: Project }) {
               onMember={(m) => setView((v) => ({ ...v, memberFilter: m }))}
               onTryAction={tryRescue}
               readOnly={false}
+              whatIf={!!whatIf}
               onEdit={edit}
             />
           )}

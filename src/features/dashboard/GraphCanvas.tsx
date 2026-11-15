@@ -21,6 +21,7 @@ import { fmtH } from '@/engine';
 import { relatedTasks } from '@/store/taskOps';
 import { STATUS_COLOR, StatusBadge, cn } from '@/components/ui';
 import { IconFlag, IconPin } from '@/components/icons';
+import { writeTaskDrag } from '@/features/whatif/drag';
 
 export type ColorBy = 'owner' | 'status';
 
@@ -42,6 +43,8 @@ type TaskNodeData = {
   dimmed: boolean;
   highlighted: boolean;
   selected: boolean;
+  reassignable: boolean;
+  onReassignDragStart?: () => void;
 };
 type TaskNodeType = Node<TaskNodeData, 'task'>;
 
@@ -52,11 +55,19 @@ const H_LINCHPIN = 112;
 const MIN_READABLE_ZOOM = 0.8;
 
 const TaskNode = memo(function TaskNode({ data }: NodeProps<TaskNodeType>) {
-  const { task, owner, remaining, critical, linchpin, downstream, borderColor, dimmed, highlighted, selected } = data;
+  const { task, owner, remaining, critical, linchpin, downstream, borderColor, dimmed, highlighted, selected, reassignable } = data;
   return (
     <div
+      draggable={reassignable}
+      title={reassignable ? 'Drag onto a person to reassign' : undefined}
+      onDragStart={(e) => {
+        if (!reassignable) return;
+        writeTaskDrag(e.dataTransfer, task.id);
+        data.onReassignDragStart?.();
+      }}
       className={cn(
         'relative flex flex-col justify-between rounded-xl bg-white px-3 py-2 text-left shadow-sm transition-opacity',
+        reassignable && 'cursor-grab active:cursor-grabbing',
         dimmed && 'opacity-25',
         task.status === 'done' && 'bg-slate-50',
       )}
@@ -116,6 +127,9 @@ export function GraphCanvas(props: {
   selectedTaskId: string | null;
   highlightTaskIds: Set<string>;
   onSelectTask: (id: string | null) => void;
+  /** What-if: nodes can be dragged onto a person to reassign them. */
+  reassignable?: boolean;
+  onReassignDragStart?: () => void;
 }) {
   return (
     <ReactFlowProvider>
@@ -124,7 +138,7 @@ export function GraphCanvas(props: {
   );
 }
 
-function GraphInner({ project, analysis, view, selectedTaskId, highlightTaskIds, onSelectTask }: Parameters<typeof GraphCanvas>[0]) {
+function GraphInner({ project, analysis, view, selectedTaskId, highlightTaskIds, onSelectTask, reassignable = false, onReassignDragStart }: Parameters<typeof GraphCanvas>[0]) {
   const { fitView, setViewport } = useReactFlow();
   const memberById = useMemo(() => new Map(project.members.map((m) => [m.id, m])), [project.members]);
 
@@ -180,6 +194,7 @@ function GraphInner({ project, analysis, view, selectedTaskId, highlightTaskIds,
       type: 'task',
       position: positions.get(t.id) ?? { x: 0, y: 0 },
       draggable: false,
+      className: reassignable ? 'nodrag nopan' : undefined,
       ariaLabel: `${t.title}. ${owner?.name ?? 'Unassigned'}. ${m.isCritical ? 'On the critical path. ' : ''}${t.id === analysis.bottleneckTaskId ? `Linchpin, blocks ${m.downstreamCount} tasks. ` : ''}`,
       data: {
         task: t,
@@ -192,6 +207,8 @@ function GraphInner({ project, analysis, view, selectedTaskId, highlightTaskIds,
         dimmed: !inFocus(t.id) || !inMember(t),
         highlighted: highlightTaskIds.has(t.id),
         selected: t.id === selectedTaskId,
+        reassignable,
+        onReassignDragStart,
       },
     };
   });
