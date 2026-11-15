@@ -1,0 +1,23 @@
+# systemd unit for the ClearPath API server.
+# Install: copy to /etc/systemd/system/clearpath.service, then
+#   systemctl daemon-reload && systemctl enable --now clearpath
+# Logs: journalctl -u clearpath -f
+# Keys go in /opt/clearpath/.env (chmod 600), never in git.
+
+[Unit]
+Description=ClearPath API server
+After=network.target
+
+[Service]
+Type=simple
+User=clearpath
+WorkingDirectory=/opt/clearpath
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOST=127.0.0.1
+ExecStart=/usr/bin/node --env-file=/opt/clearpath/.env --import tsx server/index.ts
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
