@@ -97,7 +97,7 @@ export function IntakePage() {
 
       <main id="main" className="mx-auto max-w-6xl px-6 pb-16">
         <h1 className="mb-1 text-2xl font-bold tracking-tight">New project</h1>
-        <p className="mb-6 text-slate-600">Paste a meeting transcript, feature doc or project notes. Messy is fine.</p>
+        <p className="mb-6 text-slate-600">Paste a meeting transcript, feature doc or notes, or just describe your idea and how many of you are working on it. Messy is fine.</p>
 
         {phase.kind === 'extracting' && <Extracting step={phase.step} onCancel={cancel} />}
         {phase.kind === 'error' && (
@@ -158,7 +158,7 @@ export function IntakePage() {
                   id="raw"
                   value={draft.text}
                   onChange={(e) => setDraft({ text: e.target.value })}
-                  placeholder={'Sam: I\'ll take the backend, starting with the DB schema.\nPriya: I can\'t start the menu screen until the API exists.\n\n...or paste a feature doc: goals, features, requirements.'}
+                  placeholder={'Sam: I\'ll take the backend, starting with the DB schema.\nPriya: I can\'t start the menu screen until the API exists.\n\n...or paste a feature doc: goals, features, requirements.\n\n...or just an idea: "A habit tracker app where friends keep each other on track. 3 of us, due Sunday."'}
                   aria-describedby="raw-help raw-count"
                   aria-invalid={tooLong || (touched && !draft.text.trim())}
                   className="block h-[440px] w-full resize-y rounded-xl bg-white p-4 font-mono text-sm leading-relaxed text-slate-800 placeholder:text-slate-400 focus:outline-none"

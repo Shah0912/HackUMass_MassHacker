@@ -22,7 +22,11 @@ export function diffProjects(base: Project, draft: Project): Change[] {
   for (const t of draft.tasks) {
     const b = baseById.get(t.id);
     if (!b) {
-      changes.push({ key: `${t.id}:add`, taskId: t.id, text: `Added "${t.title || 'Untitled'}"`, revert: (d) => ({ ...d, tasks: d.tasks.filter((x) => x.id !== t.id) }) });
+      changes.push({ key: `${t.id}:add`, taskId: t.id, text: `Added "${t.title || 'Untitled'}"`, revert: (d) => ({
+          ...d,
+          // Also unhook tasks that were set to wait on it, so undo never leaves a dangling dependency.
+          tasks: d.tasks.filter((x) => x.id !== t.id).map((x) => (x.dependsOn.includes(t.id) ? { ...x, dependsOn: x.dependsOn.filter((y) => y !== t.id) } : x)),
+        }) });
       continue;
     }
     for (const f of FIELDS) {

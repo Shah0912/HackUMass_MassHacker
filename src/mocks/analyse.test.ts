@@ -21,7 +21,7 @@ describe('sample project (gold standard for the demo)', () => {
     expect(a.bufferHours).toBeCloseTo(-6, 5);
   });
 
-  it('has the schema task as the linchpin, blocking 13 tasks', () => {
+  it('has the schema task as the bottleneck, blocking 13 tasks', () => {
     expect(a.bottleneckTaskId).toBe('t2');
     expect(a.tasks.t2!.downstreamCount).toBe(13);
     expect(a.criticalPath).toEqual(['t2', 't4', 't8', 't9', 't12', 't14', 't15']);

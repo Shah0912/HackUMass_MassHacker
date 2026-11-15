@@ -12,7 +12,7 @@ import tailwindcss from '@tailwindcss/vite';
  */
 function localApi(): Plugin {
   return {
-    name: 'linchpin-local-api',
+    name: 'clearpath-local-api',
     apply: 'serve',
     configureServer(server) {
       Object.assign(process.env, { ...loadEnv(server.config.mode, process.cwd(), ''), ...process.env });

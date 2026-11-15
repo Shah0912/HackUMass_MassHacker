@@ -17,7 +17,11 @@ export default function handler(_req: Request): Response {
       provider,
       model,
       configError,
-      keys: { gemini: Boolean(process.env.GEMINI_API_KEY), claude: Boolean(process.env.ANTHROPIC_API_KEY) },
+      keys: {
+        gemini: Boolean(process.env.GEMINI_API_KEY),
+        claude: Boolean(process.env.ANTHROPIC_API_KEY),
+        grok: Boolean(process.env.XAI_API_KEY),
+      },
     },
   });
 }

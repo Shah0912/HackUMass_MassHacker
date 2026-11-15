@@ -41,7 +41,7 @@ export function Logo() {
         <circle cx="12" cy="12" r="3.5" fill="#dc2626" />
         <path d="M12 2v6.5M12 15.5V22M2 12h6.5M15.5 12H22" stroke="currentColor" strokeWidth="2" />
       </svg>
-      Linchpin
+      ClearPath
     </Link>
   );
 }

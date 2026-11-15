@@ -1,4 +1,4 @@
-// F-05 Dependency graph: left-to-right dagre layout, critical path and linchpin marked
+// F-05 Dependency graph: left-to-right dagre layout, critical path and bottleneck marked
 // with shape + text (never colour alone), click to focus a task's chain.
 import { memo, useEffect, useMemo, useRef } from 'react';
 import {
@@ -37,7 +37,7 @@ type TaskNodeData = {
   owner: Member | undefined;
   remaining: number;
   critical: boolean;
-  linchpin: boolean;
+  bottleneck: boolean;
   downstream: number;
   borderColor: string;
   dimmed: boolean;
@@ -49,13 +49,13 @@ type TaskNodeData = {
 type TaskNodeType = Node<TaskNodeData, 'task'>;
 
 const W = 230;
-const W_LINCHPIN = 270;
+const W_BIG = 270;
 const H = 92;
-const H_LINCHPIN = 112;
+const H_BIG = 112;
 const MIN_READABLE_ZOOM = 0.8;
 
 const TaskNode = memo(function TaskNode({ data }: NodeProps<TaskNodeType>) {
-  const { task, owner, remaining, critical, linchpin, downstream, borderColor, dimmed, highlighted, selected, reassignable } = data;
+  const { task, owner, remaining, critical, bottleneck, downstream, borderColor, dimmed, highlighted, selected, reassignable } = data;
   return (
     <div
       draggable={reassignable}
@@ -72,25 +72,25 @@ const TaskNode = memo(function TaskNode({ data }: NodeProps<TaskNodeType>) {
         task.status === 'done' && 'bg-slate-50',
       )}
       style={{
-        width: linchpin ? W_LINCHPIN : W,
-        height: linchpin ? H_LINCHPIN : H,
+        width: bottleneck ? W_BIG : W,
+        height: bottleneck ? H_BIG : H,
         border: `${critical ? 4 : 2}px ${task.status === 'done' ? 'dashed' : 'solid'} ${borderColor}`,
         boxShadow: selected
           ? '0 0 0 4px rgba(37,99,235,.45)'
           : highlighted
             ? '0 0 0 4px rgba(245,158,11,.6)'
-            : linchpin
+            : bottleneck
               ? '0 0 0 6px rgba(220,38,38,.18), 0 8px 24px rgba(220,38,38,.25)'
               : undefined,
       }}
     >
       <Handle type="target" position={Position.Left} className="!h-2 !w-2 !border-0 !bg-slate-400" />
       <Handle type="source" position={Position.Right} className="!h-2 !w-2 !border-0 !bg-slate-400" />
-      {(critical || linchpin) && (
+      {(critical || bottleneck) && (
         <div className="absolute -top-3 left-2 flex gap-1">
-          {linchpin && (
+          {bottleneck && (
             <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-bold text-white">
-              <IconPin size={11} /> Linchpin · blocks {downstream}
+              <IconPin size={11} /> Bottleneck · blocks {downstream}
             </span>
           )}
           {critical && (
@@ -100,7 +100,7 @@ const TaskNode = memo(function TaskNode({ data }: NodeProps<TaskNodeType>) {
           )}
         </div>
       )}
-      <p className={cn('line-clamp-2 font-semibold leading-snug text-slate-900', linchpin ? 'mt-1.5 text-[15px]' : 'mt-0.5 text-[13px]', task.status === 'done' && 'text-slate-500 line-through')}>
+      <p className={cn('line-clamp-2 font-semibold leading-snug text-slate-900', bottleneck ? 'mt-1.5 text-[15px]' : 'mt-0.5 text-[13px]', task.status === 'done' && 'text-slate-500 line-through')}>
         {task.title || <em className="font-normal text-slate-400">Untitled</em>}
       </p>
       <div className="flex items-center justify-between gap-2 text-xs">
@@ -112,7 +112,7 @@ const TaskNode = memo(function TaskNode({ data }: NodeProps<TaskNodeType>) {
       </div>
       <div className="flex items-center justify-between">
         <StatusBadge status={task.status} />
-        {!linchpin && downstream >= 3 && <span className="text-[11px] font-medium text-slate-500">blocks {downstream}</span>}
+        {!bottleneck && downstream >= 3 && <span className="text-[11px] font-medium text-slate-500">blocks {downstream}</span>}
       </div>
     </div>
   );
@@ -162,7 +162,7 @@ function GraphInner({ project, analysis, view, selectedTaskId, highlightTaskIds,
     g.setDefaultEdgeLabel(() => ({}));
     for (const t of visible) {
       const big = t.id === analysis.bottleneckTaskId;
-      g.setNode(t.id, { width: big ? W_LINCHPIN : W, height: (big ? H_LINCHPIN : H) + 14 });
+      g.setNode(t.id, { width: big ? W_BIG : W, height: (big ? H_BIG : H) + 14 });
     }
     for (const t of visible) for (const d of effectiveVisibleDeps(t, project, visibleIds)) g.setEdge(d, t.id);
     layout(g);
@@ -170,7 +170,7 @@ function GraphInner({ project, analysis, view, selectedTaskId, highlightTaskIds,
     for (const t of visible) {
       const n = g.node(t.id);
       const big = t.id === analysis.bottleneckTaskId;
-      pos.set(t.id, { x: n.x - (big ? W_LINCHPIN : W) / 2, y: n.y - (big ? H_LINCHPIN : H) / 2 });
+      pos.set(t.id, { x: n.x - (big ? W_BIG : W) / 2, y: n.y - (big ? H_BIG : H) / 2 });
     }
     return pos;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -195,13 +195,13 @@ function GraphInner({ project, analysis, view, selectedTaskId, highlightTaskIds,
       position: positions.get(t.id) ?? { x: 0, y: 0 },
       draggable: false,
       className: reassignable ? 'nodrag nopan' : undefined,
-      ariaLabel: `${t.title}. ${owner?.name ?? 'Unassigned'}. ${m.isCritical ? 'On the critical path. ' : ''}${t.id === analysis.bottleneckTaskId ? `Linchpin, blocks ${m.downstreamCount} tasks. ` : ''}`,
+      ariaLabel: `${t.title}. ${owner?.name ?? 'Unassigned'}. ${m.isCritical ? 'On the critical path. ' : ''}${t.id === analysis.bottleneckTaskId ? `Bottleneck, blocks ${m.downstreamCount} tasks. ` : ''}`,
       data: {
         task: t,
         owner,
         remaining: m.remainingHours,
         critical: m.isCritical,
-        linchpin: t.id === analysis.bottleneckTaskId,
+        bottleneck: t.id === analysis.bottleneckTaskId,
         downstream: m.downstreamCount,
         borderColor: view.colorBy === 'owner' ? owner?.color ?? '#94a3b8' : STATUS_COLOR[t.status],
         dimmed: !inFocus(t.id) || !inMember(t),
@@ -232,7 +232,7 @@ function GraphInner({ project, analysis, view, selectedTaskId, highlightTaskIds,
   );
 
   // Fit the whole graph if it stays readable; otherwise keep text readable and start from the
-  // left (where the chain, and usually the linchpin, begins). Users can pan or press fit.
+  // left (where the chain, and usually the bottleneck, begins). Users can pan or press fit.
   const wrapRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const t = setTimeout(() => {
@@ -244,8 +244,8 @@ function GraphInner({ project, analysis, view, selectedTaskId, highlightTaskIds,
         const big = tid === analysis.bottleneckTaskId;
         minX = Math.min(minX, p.x);
         minY = Math.min(minY, p.y - 14);
-        maxX = Math.max(maxX, p.x + (big ? W_LINCHPIN : W));
-        maxY = Math.max(maxY, p.y + (big ? H_LINCHPIN : H));
+        maxX = Math.max(maxX, p.x + (big ? W_BIG : W));
+        maxY = Math.max(maxY, p.y + (big ? H_BIG : H));
       }
       const pad = 40;
       const fit = Math.min((vw - 2 * pad) / (maxX - minX), (vh - 2 * pad) / (maxY - minY));

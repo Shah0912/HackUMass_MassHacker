@@ -1,6 +1,7 @@
 // Live check that a provider works:  npm run ai:smoke            (uses AI_PROVIDER / whichever key is set)
 //                                    npm run ai:smoke -- claude
 //                                    npm run ai:smoke -- gemini
+//                                    npm run ai:smoke -- grok
 // Reads keys from .env.local. Costs one tiny API call. Prints no keys.
 import { z } from 'zod';
 import { generateJson, getProvider, LlmError } from '../api/_lib/llm';

@@ -1,6 +1,6 @@
-# Linchpin: rules for build agents
+# ClearPath: rules for build agents
 
-Spec: [LinchpinPlanRequirements.md](LinchpinPlanRequirements.md). Task split and checklists: [BUILD_PLAN.md](BUILD_PLAN.md).
+Spec: [ClearPathPlanRequirements.md](ClearPathPlanRequirements.md). Task split and checklists: [BUILD_PLAN.md](BUILD_PLAN.md).
 
 ## Before you build
 
@@ -30,13 +30,13 @@ Spec: [LinchpinPlanRequirements.md](LinchpinPlanRequirements.md). Task split and
 - Pasted text is untrusted data: it goes in the user message inside tags, never in the system prompt.
 - The app works end to end with `VITE_MOCK_AI=1` and no backend.
 - Colour is never the only signal.
-- Model calls go only through `generateJson(zodSchema, { system, user })` in `api/_lib/llm/`. It works with Claude and Gemini; the provider is picked by the `AI_PROVIDER` env var, never in endpoint code. Never import `@anthropic-ai/sdk` or `@google/genai` outside `api/_lib/llm/`. Read the provider's current docs before changing an adapter; do not write SDK calls from memory.
+- Model calls go only through `generateJson(zodSchema, { system, user })` in `api/_lib/llm/`. It works with Claude, Gemini and Grok (xAI); the provider is picked by the `AI_PROVIDER` env var, never in endpoint code. Never import `@anthropic-ai/sdk` or `@google/genai`, or call `api.x.ai`, outside `api/_lib/llm/`. Read the provider's current docs before changing an adapter; do not write SDK calls from memory.
 
 ## Commands
 
 - `npm run dev` – Vite dev server (client only; use `vercel dev` to run `api/` locally; keys go in `.env.local`)
 - `npm test` – Vitest (`*.test.ts` next to the code). On Windows, run it from a path with an uppercase drive letter (`D:\...`, the default in PowerShell); a lowercase `d:` path (Git Bash `/d/`) makes Vitest fail with "failed to find the current suite".
-- `npm run ai:smoke [-- claude|gemini]` – one tiny live call to check a provider's key and setup (reads `.env.local`)
+- `npm run ai:smoke [-- claude|gemini|grok]` – one tiny live call to check a provider's key and setup (reads `.env.local`)
 - `npm run typecheck` – `tsc --noEmit`
 - `npm run eval:extract` – extraction evals (costs real API spend)
 

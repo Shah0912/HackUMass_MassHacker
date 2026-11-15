@@ -2,7 +2,7 @@
 import type { Member, Project, Task } from '@/core/types';
 import { LIMITS, MEMBER_COLORS, memberColor } from '@/core/types';
 import { byId } from '@/engine';
-import { splitTask } from '@/core/split';
+import { isOversized, splitTask } from '@/core/split';
 
 const touch = (p: Project): Project => ({ ...p, updatedAt: new Date().toISOString() });
 
@@ -92,6 +92,55 @@ export function removeMember(p: Project, id: string): Project {
     members: p.members.filter((m) => m.id !== id),
     tasks: p.tasks.map((t) => (t.ownerId === id ? { ...t, ownerId: null, source: 'user' } : t)),
   });
+}
+
+// ---------------- Adding a task from the graph ----------------
+
+export interface NewTaskInput {
+  title: string;
+  ownerId: string | null;
+  estimateHours: number;
+  /** Tasks the new one waits on. */
+  dependsOn: string[];
+  /** Tasks that should wait on the new one. */
+  unlocks: string[];
+}
+
+/** True if a new task that waits on `dependsOn` and that `unlocks` wait on would close a loop. */
+export function wouldCreateCycle(p: Project, dependsOn: string[], unlocks: string[]): boolean {
+  if (unlocks.some((u) => dependsOn.includes(u))) return true;
+  // u → … → d already exists, so d → new → u would close the loop.
+  return unlocks.some((u) => {
+    const { downstream } = relatedTasks(p, u);
+    return dependsOn.some((d) => downstream.has(d));
+  });
+}
+
+/**
+ * Add a fully described task and wire it into the graph. Unknown IDs are dropped; a task over the
+ * size limit is split into chained parts at once (tasks that it unlocks then wait on the last part).
+ */
+export function addTaskWith(p: Project, input: NewTaskInput): { project: Project; id: string } {
+  const id = nextTaskId(p);
+  const known = new Set(p.tasks.map((t) => t.id));
+  const dependsOn = [...new Set(input.dependsOn)].filter((d) => known.has(d));
+  const unlocks = new Set(input.unlocks.filter((u) => known.has(u) && !dependsOn.includes(u)));
+  const est = Number.isFinite(input.estimateHours) ? input.estimateHours : 1;
+  const task: Task = {
+    id,
+    title: input.title.trim().slice(0, 80),
+    ownerId: input.ownerId && p.members.some((m) => m.id === input.ownerId) ? input.ownerId : null,
+    estimateHours: Math.min(80, Math.max(0.25, Math.round(est * 4) / 4)),
+    status: 'todo',
+    dependsOn,
+    source: 'user',
+  };
+  let tasks = [
+    ...p.tasks.map((t) => (unlocks.has(t.id) && !t.dependsOn.includes(id) ? { ...t, dependsOn: [...t.dependsOn, id], source: 'user' as const } : t)),
+    task,
+  ];
+  if (isOversized(task)) tasks = splitTask(tasks, id).tasks;
+  return { project: touch({ ...p, tasks }), id };
 }
 
 /** Break a task over the size limit into chained parts (see src/core/split). */

@@ -1,4 +1,4 @@
-# Linchpin MVP: 3-Hour Build
+# ClearPath MVP: 3-Hour Build
 
 **Promise:** paste a messy project chat → see the one task everything waits on → know whether the team finishes on time.
 
@@ -122,7 +122,7 @@ Every number in the text is read from the `Analysis`.
 
 ### Model call (P2)
 
-- **Done already:** `api/_lib/llm/` supports both Claude and Gemini behind one call. `AI_PROVIDER=claude|gemini` picks the provider (if unset, whichever key is present, Gemini first). Defaults: `gemini-2.5-flash` and `claude-opus-5-5`, overridable with `GEMINI_MODEL` / `CLAUDE_MODEL`.
+- **Done already:** `api/_lib/llm/` supports Claude, Gemini and Grok behind one call. `AI_PROVIDER=gemini|claude|grok` picks the provider (if unset, whichever key is present: Gemini, then Claude, then Grok). Defaults: `gemini-2.5-flash`, `claude-opus-5-5` and `grok-4.3`, overridable with `GEMINI_MODEL` / `CLAUDE_MODEL` / `GROK_MODEL`.
 - P2 only writes: `const { data } = await generateJson(ExtractSchema, { system: SYSTEM_PROMPT, user: \`<project_text>${text}</project_text>\`, effort: 'medium' })`, then post-processes `data` into a `Project`.
 - `generateJson` already handles: JSON-schema structured output for both providers, `JSON.parse` + Zod validation, refusal/safety blocks → `MODEL_REFUSED`, out of tokens or bad JSON → `MODEL_INVALID_OUTPUT`, 429 → `RATE_LIMITED`, 60 s abort → `TIMEOUT`, metadata-only logging.
 - Catch `LlmError` in the endpoint and return `{ ok: false, error: { code, message, retryable } }`.

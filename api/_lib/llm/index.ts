@@ -1,9 +1,10 @@
 // The one entry point endpoints use: generateJson(zodSchema, { system, user }).
-// Provider is chosen by AI_PROVIDER ('claude' | 'gemini'); if unset, whichever key is present
-// (Gemini first). Switching providers needs no code change, only env vars.
+// Provider is chosen by AI_PROVIDER ('gemini' | 'claude' | 'grok'); if unset, whichever key is
+// present (Gemini, then Claude, then Grok). Switching providers needs no code change, only env vars.
 import type { z } from 'zod';
 import { createClaudeProvider } from './claude';
 import { createGeminiProvider } from './gemini';
+import { createGrokProvider } from './grok';
 import { toProviderSchema } from './schema';
 import { LlmError, type LlmProvider, type ProviderName } from './types';
 
@@ -14,7 +15,16 @@ export { toProviderSchema } from './schema';
 export const DEFAULT_MODELS: Record<ProviderName, string> = {
   claude: 'claude-opus-5-5',
   gemini: 'gemini-2.5-flash',
+  grok: 'grok-4.3', // faster than grok-4.7 (about 20 s vs 60 s on the sample)
 };
+
+/** Env var names per provider. Order = fallback order when AI_PROVIDER is unset. */
+const PROVIDERS: Record<ProviderName, { keyVar: string; modelVar: string }> = {
+  gemini: { keyVar: 'GEMINI_API_KEY', modelVar: 'GEMINI_MODEL' },
+  claude: { keyVar: 'ANTHROPIC_API_KEY', modelVar: 'CLAUDE_MODEL' },
+  grok: { keyVar: 'XAI_API_KEY', modelVar: 'GROK_MODEL' },
+};
+const NAMES = Object.keys(PROVIDERS) as ProviderName[];
 
 const TIMEOUT_MS = 60_000;
 
@@ -22,20 +32,24 @@ type Env = Record<string, string | undefined>;
 
 export function resolveProvider(env: Env = process.env): { name: ProviderName; model: string; apiKey: string } {
   const wanted = env.AI_PROVIDER?.trim().toLowerCase() || undefined;
-  if (wanted && wanted !== 'claude' && wanted !== 'gemini') {
-    throw new LlmError('AI_NOT_CONFIGURED', `AI_PROVIDER must be "claude" or "gemini", got "${wanted}".`, false);
+  if (wanted && !NAMES.includes(wanted as ProviderName)) {
+    throw new LlmError('AI_NOT_CONFIGURED', `AI_PROVIDER must be one of ${NAMES.join(', ')}; got "${wanted}".`, false);
   }
-  const name: ProviderName | null =
-    (wanted as ProviderName | undefined) ?? (env.GEMINI_API_KEY ? 'gemini' : env.ANTHROPIC_API_KEY ? 'claude' : null);
-  if (!name) throw new LlmError('AI_NOT_CONFIGURED', 'No AI key set (GEMINI_API_KEY or ANTHROPIC_API_KEY).', false);
-
-  const apiKey = name === 'claude' ? env.ANTHROPIC_API_KEY : env.GEMINI_API_KEY;
-  if (!apiKey) {
-    const key = name === 'claude' ? 'ANTHROPIC_API_KEY' : 'GEMINI_API_KEY';
-    throw new LlmError('AI_NOT_CONFIGURED', `AI_PROVIDER is "${name}" but ${key} is not set.`, false);
+  const name = (wanted as ProviderName | undefined) ?? NAMES.find((n) => env[PROVIDERS[n].keyVar]) ?? null;
+  if (!name) {
+    throw new LlmError('AI_NOT_CONFIGURED', `No AI key set (${NAMES.map((n) => PROVIDERS[n].keyVar).join(', ')}).`, false);
   }
-  const model = (name === 'claude' ? env.CLAUDE_MODEL : env.GEMINI_MODEL)?.trim() || DEFAULT_MODELS[name];
+  const { keyVar, modelVar } = PROVIDERS[name];
+  const apiKey = env[keyVar];
+  if (!apiKey) throw new LlmError('AI_NOT_CONFIGURED', `AI_PROVIDER is "${name}" but ${keyVar} is not set.`, false);
+  const model = env[modelVar]?.trim() || DEFAULT_MODELS[name];
   return { name, model, apiKey };
+}
+
+function createProvider(name: ProviderName, apiKey: string, model: string): LlmProvider {
+  if (name === 'claude') return createClaudeProvider(apiKey, model);
+  if (name === 'grok') return createGrokProvider(apiKey, model);
+  return createGeminiProvider(apiKey, model);
 }
 
 let cached: { key: string; provider: LlmProvider } | null = null;
@@ -44,7 +58,7 @@ export function getProvider(env: Env = process.env): LlmProvider {
   const { name, model, apiKey } = resolveProvider(env);
   const key = `${name}:${model}:${apiKey}`;
   if (cached?.key !== key) {
-    const provider = name === 'claude' ? createClaudeProvider(apiKey, model) : createGeminiProvider(apiKey, model);
+    const provider = createProvider(name, apiKey, model);
     cached = { key, provider };
   }
   return cached.provider;

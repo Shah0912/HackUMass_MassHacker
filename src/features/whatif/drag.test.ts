@@ -31,7 +31,7 @@ describe('task drag payload', () => {
     expect(readTaskDrag(data)).toBe('');
   });
 
-  it('uses the linchpin drag type', () => {
-    expect(TASK_DRAG_TYPE).toBe('application/x-linchpin-task');
+  it('uses the ClearPath drag type', () => {
+    expect(TASK_DRAG_TYPE).toBe('application/x-clearpath-task');
   });
 });

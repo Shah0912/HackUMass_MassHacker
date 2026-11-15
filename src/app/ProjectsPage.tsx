@@ -47,8 +47,11 @@ export function ProjectsPage() {
         <section className="py-10">
           <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-slate-900">Find the task your project is waiting on.</h1>
           <p className="mt-3 max-w-2xl text-lg text-slate-600">
-            Paste a meeting transcript or feature doc. Linchpin maps who's doing what and what waits on what, then shows the one task holding
-            everyone up and whether you'll make the deadline.
+            You don't need a finished plan to start. A one-line idea and your team size is enough, and so is a messy meeting transcript or a feature doc. ClearPath fills
+            in the tasks, who's doing what and what waits on what, then shows the one task holding everyone up and whether you'll make the deadline.
+          </p>
+          <p className="mt-2 max-w-2xl text-sm text-slate-500">
+            For example: <span className="italic">"A habit tracker app where friends keep each other on track. 3 of us, due Sunday."</span>
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button size="lg" variant="primary" onClick={() => navigate('/new')}>

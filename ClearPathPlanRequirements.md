@@ -1,12 +1,12 @@
-# Linchpin: Plan & Requirements
+# ClearPath: Plan & Requirements
 
 Nov 14, 2026 · @Aditya
 
 ## Overview
 
-**Repo name: `linchpin`.** A linchpin is the one pin that holds the whole wheel on, which is exactly what the app finds: the single task or person everything else waits on.
+**Name: ClearPath** (repo `clearpath`). It turns a messy conversation into a clear path forward: a task list with owners, estimates and dependencies, then the critical path and the one task everything else waits on.
 
-Other names if `linchpin` is taken: `critpath`, `blockerbot`, `domino`, `unblock-us`, `groupthink-graph`.
+Formerly called Linchpin.
 
 **Pitch:** paste your messy group chat, get the one task your whole project is waiting on, plus a rescue plan.
 
@@ -427,13 +427,13 @@ For `reassign` and `cut` suggestions, apply the change to a copy, re-run the ana
 
 | Key | Value |
 | --- | --- |
-| `linchpin:v1:projects` | `Record<string, Project>` |
-| `linchpin:v1:active` | ID of the open project |
-| `linchpin:v1:intakeDraft` | Unsaved intake form |
+| `clearpath:v1:projects` | `Record<string, Project>` |
+| `clearpath:v1:active` | ID of the open project |
+| `clearpath:v1:intakeDraft` | Unsaved intake form |
 
 - Writes debounced 300 ms; every read and write wrapped in try/catch so the app still renders if storage fails.
 - Unknown `schemaVersion` is listed as unreadable and offered for export, never deleted.
-- Export file: one `Project` as `<name>.linchpin.json`. Import: parse, validate with Zod, assign a new `id`, save.
+- Export file: one `Project` as `<name>.clearpath.json`. Import: parse, validate with Zod, assign a new `id`, save.
 
 ### Fixtures and sample data
 
@@ -449,7 +449,7 @@ The demo sample must have 14 to 18 tasks and four members; one unstarted task wi
 
 ## AI orchestration
 
-Linchpin is a fixed workflow, not an agent: three single-call pipelines, each wrapped by code that validates the input, checks the output and does all the maths. The model reads messy text and writes words; it never decides a number the user sees.
+ClearPath is a fixed workflow, not an agent: three single-call pipelines, each wrapped by code that validates the input, checks the output and does all the maths. The model reads messy text and writes words; it never decides a number the user sees.
 
 &#91;embedded content: AI orchestration · 2 model calls, 3 code checks, 3 human steps\]
 

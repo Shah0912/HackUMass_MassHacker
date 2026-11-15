@@ -6,9 +6,10 @@ import type { Project, Risk, Task } from '@/core/types';
 import { analyse } from '@/engine';
 import { applyRescueAction, type RescueAction } from '@/ai/client';
 import { downloadProject, useStore } from '@/store/projects';
-import { deleteTask, updateTask } from '@/store/taskOps';
+import { addTaskWith, deleteTask, updateTask, type NewTaskInput } from '@/store/taskOps';
 import { Button, EmptyState, cn, useNow } from '@/components/ui';
-import { IconAlert, IconArrowLeft, IconDownload, IconSparkle } from '@/components/icons';
+import { IconAlert, IconArrowLeft, IconDownload, IconPlus, IconSparkle } from '@/components/icons';
+import { AddTaskPanel } from './AddTaskPanel';
 import { GraphCanvas, type GraphView } from './GraphCanvas';
 import { SidePanel, type Tab } from './SidePanel';
 import { TaskDrawer } from './TaskDrawer';
@@ -69,6 +70,25 @@ function Dashboard({ project }: { project: Project }) {
   const selectTask = useCallback((tid: string | null) => setUrl({ task: tid }, true), [setUrl]);
 
   const edit = (fn: (p: Project) => Project) => (whatIf ? updateWhatIf(fn) : updateProject(project.id, fn));
+
+  // Add-task panel: null = closed, otherwise the pre-filled "waits on" list.
+  const [adding, setAdding] = useState<string[] | null>(null);
+  const openAdd = (after: string[] = []) => {
+    selectTask(null);
+    setAdding(after);
+  };
+  const closeAdd = useCallback(() => setAdding(null), []);
+  const createTask = (input: NewTaskInput) => {
+    let newId: string | null = null;
+    edit((p) => {
+      const r = addTaskWith(p, input);
+      newId = r.id;
+      return r.project;
+    });
+    setAdding(null);
+    // Open the new task so it is highlighted in the graph.
+    if (newId) selectTask(newId);
+  };
   const enterWhatIf = (fn?: (p: Project) => Project, taskId?: string) => {
     startWhatIf(project.id, fn);
     setUrl({ mode: 'whatif', ...(taskId ? { task: taskId } : {}) });
@@ -97,6 +117,9 @@ function Dashboard({ project }: { project: Project }) {
         <h1 className="truncate font-semibold text-slate-900">{project.name}</h1>
         {whatIf && <span className="rounded bg-amber-400 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-amber-950">What-if</span>}
         <div className="ml-auto flex items-center gap-2">
+          <Button size="sm" variant="ghost" onClick={() => openAdd()}>
+            <IconPlus size={14} /> Add task
+          </Button>
           {!whatIf && (
             <>
               <Link to={`/p/${project.id}/review`} className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-sm text-slate-700 hover:bg-slate-100">
@@ -184,7 +207,18 @@ function Dashboard({ project }: { project: Project }) {
               onEdit={edit}
             />
           )}
-          {selectedTaskId && working.tasks.some((t) => t.id === selectedTaskId) && (
+          {adding && (
+            <AddTaskPanel
+              key={adding.join(',')}
+              project={working}
+              initialDependsOn={adding}
+              whatIf={!!whatIf}
+              onCancel={closeAdd}
+              onCreate={createTask}
+              onEdit={edit}
+            />
+          )}
+          {!adding && selectedTaskId && working.tasks.some((t) => t.id === selectedTaskId) && (
             <TaskDrawer
               project={working}
               analysis={analysis}
@@ -194,6 +228,7 @@ function Dashboard({ project }: { project: Project }) {
               onSelect={selectTask}
               onChange={(patch) => edit((p) => updateTask(p, selectedTaskId, patch))}
               onEdit={edit}
+              onAddAfter={() => openAdd([selectedTaskId])}
               onDelete={() => {
                 edit((p) => deleteTask(p, selectedTaskId));
                 selectTask(null);
@@ -251,7 +286,7 @@ function Legend() {
         <span className="inline-block h-0 w-6 border-t-[3.5px] border-slate-900" /> Critical path (thick border, "Critical" tag)
       </p>
       <p className="mt-1 flex items-center gap-2">
-        <span className="inline-block h-3 w-6 rounded-sm bg-red-600" /> Linchpin: the task most others wait on
+        <span className="inline-block h-3 w-6 rounded-sm bg-red-600" /> Bottleneck: the task most others wait on
       </p>
       <p className="mt-1 flex items-center gap-2">
         <span className="inline-block h-3 w-6 rounded-sm border-2 border-dashed border-slate-400" /> Done

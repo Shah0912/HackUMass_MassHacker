@@ -15,6 +15,18 @@ describe('resolveProvider', () => {
     expect(resolveProvider({ AI_PROVIDER: '', ANTHROPIC_API_KEY: 'a' }).name).toBe('claude');
   });
 
+  it('supports Grok via AI_PROVIDER or as the last fallback', () => {
+    expect(resolveProvider({ AI_PROVIDER: 'grok', XAI_API_KEY: 'x', GEMINI_API_KEY: 'g' })).toMatchObject({
+      name: 'grok',
+      model: 'grok-4.3',
+      apiKey: 'x',
+    });
+    expect(resolveProvider({ XAI_API_KEY: 'x' }).name).toBe('grok');
+    expect(resolveProvider({ XAI_API_KEY: 'x', ANTHROPIC_API_KEY: 'a' }).name).toBe('claude');
+    expect(resolveProvider({ XAI_API_KEY: 'x', GROK_MODEL: 'grok-4.7' }).model).toBe('grok-4.7');
+    expect(() => resolveProvider({ AI_PROVIDER: 'grok', GEMINI_API_KEY: 'g' })).toThrow(/XAI_API_KEY/);
+  });
+
   it('honours model overrides', () => {
     expect(resolveProvider({ GEMINI_API_KEY: 'g', GEMINI_MODEL: 'gemini-x' }).model).toBe('gemini-x');
     expect(resolveProvider({ ANTHROPIC_API_KEY: 'a', CLAUDE_MODEL: 'claude-x' }).model).toBe('claude-x');

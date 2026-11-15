@@ -51,10 +51,13 @@ interface State {
 }
 
 // Every storage access wrapped so the app still renders if storage is blocked or full.
+const STORE_KEY = 'clearpath:v1';
+const LEGACY_STORE_KEY = 'linchpin:v1'; // the app's old name: read once so saved projects carry over
+
 const safeStorage: StateStorage = {
   getItem: (k) => {
     try {
-      return localStorage.getItem(k);
+      return localStorage.getItem(k) ?? (k === STORE_KEY ? localStorage.getItem(LEGACY_STORE_KEY) : null);
     } catch {
       return null;
     }
@@ -110,7 +113,7 @@ export const useStore = create<State>()(
           return { ok: false, message: "That file isn't valid JSON." };
         }
         const parsed = ProjectSchema.safeParse(raw);
-        if (!parsed.success) return { ok: false, message: "That file isn't a Linchpin project, so nothing was imported." };
+        if (!parsed.success) return { ok: false, message: "That file isn't a ClearPath project, so nothing was imported." };
         const now = new Date().toISOString();
         const p: Project = { ...parsed.data, id: crypto.randomUUID(), updatedAt: now };
         return { ok: true, id: get().saveProject(p) };
@@ -132,7 +135,7 @@ export const useStore = create<State>()(
       discardWhatIf: () => set({ whatIf: null }),
     }),
     {
-      name: 'linchpin:v1',
+      name: STORE_KEY,
       version: 1,
       storage: createJSONStorage(() => safeStorage),
       partialize: (s) => ({ projects: s.projects, intakeDraft: s.intakeDraft, whatIf: s.whatIf }),
@@ -146,7 +149,7 @@ export function downloadProject(p: Project) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${slug}.linchpin.json`;
+  a.download = `${slug}.clearpath.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

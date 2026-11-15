@@ -5,7 +5,7 @@ import { fmtH } from '@/engine';
 import { Button, DependencyPicker, Dot, STATUS_LABEL, StatusBadge, cn } from '@/components/ui';
 import { OwnerSelect } from '@/components/people';
 import { addMember } from '@/store/taskOps';
-import { IconCheck, IconFlag, IconPin, IconQuote, IconScissors, IconTrash, IconUndo, IconX } from '@/components/icons';
+import { IconCheck, IconFlag, IconPin, IconPlus, IconQuote, IconScissors, IconTrash, IconUndo, IconX } from '@/components/icons';
 
 export function TaskDrawer({
   project,
@@ -16,6 +16,7 @@ export function TaskDrawer({
   onChange,
   onDelete,
   onEdit,
+  onAddAfter,
   whatIf,
 }: {
   project: Project;
@@ -27,6 +28,8 @@ export function TaskDrawer({
   onDelete: () => void;
   /** Whole-project edit (used to add a person the AI missed). */
   onEdit: (fn: (p: Project) => Project) => void;
+  /** Open the add-task panel with this task pre-filled as "waits on". */
+  onAddAfter: () => void;
   whatIf: boolean;
 }) {
   const task = project.tasks.find((t) => t.id === taskId);
@@ -45,7 +48,7 @@ export function TaskDrawer({
   const blockedBy = task.dependsOn.map((id) => project.tasks.find((t) => t.id === id)).filter(Boolean) as Task[];
   const blocks = project.tasks.filter((t) => t.dependsOn.includes(task.id) && !t.cut);
   const options = project.tasks.filter((t) => !t.cut).map((t) => ({ id: t.id, title: t.title }));
-  const isLinchpin = analysis.bottleneckTaskId === task.id;
+  const isBottleneck = analysis.bottleneckTaskId === task.id;
 
   return (
     <aside
@@ -56,9 +59,9 @@ export function TaskDrawer({
     >
       <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2.5">
         <div className="flex items-center gap-1.5">
-          {isLinchpin && (
+          {isBottleneck && (
             <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-bold text-white">
-              <IconPin size={11} /> Linchpin
+              <IconPin size={11} /> Bottleneck
             </span>
           )}
           {m?.isCritical && (
@@ -168,6 +171,9 @@ export function TaskDrawer({
       </div>
 
       <div className="flex flex-wrap gap-2 border-t border-slate-200 p-3">
+        <Button onClick={onAddAfter} title="Add a new task that waits on this one">
+          <IconPlus size={14} /> Add task after this
+        </Button>
         {whatIf && task.status !== 'done' && (
           <Button onClick={() => onChange({ status: 'done' })}>
             <IconCheck size={14} /> Mark done

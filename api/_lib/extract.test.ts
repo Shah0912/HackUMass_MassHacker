@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ExtractModelOutput, ExtractRequest } from '../../src/ai/contracts';
-import { buildExtractUserMessage, clampEstimate, matchMember, oversizedKeys, postProcessExtract } from './extract';
+import { buildExtractUserMessage, clampEstimate, hoursPerPersonBeforeDeadline, matchMember, oversizedKeys, postProcessExtract } from './extract';
 
 const req = (over: Partial<ExtractRequest> = {}): ExtractRequest => ({
   name: 'Demo',
@@ -130,6 +130,35 @@ describe('helpers', () => {
     ];
     expect(matchMember('sam', ms)).toBeNull();
     expect(matchMember('SAM ROE', ms)?.id).toBe('m2');
+    expect(matchMember('Sam Lee', [{ id: 'm1', name: 'Sam', hoursPerDay: 4, color: '' }])?.id).toBe('m1');
+    expect(matchMember('Teammate 2', [{ id: 'm1', name: 'Teammate 1', hoursPerDay: 4, color: '' }])).toBeNull();
+  });
+
+  it('gives the model a per-person hour budget for sizing a plan', () => {
+    const now = new Date('2026-11-14T18:00:00Z');
+    // 2 days left at 6 h/day = 12 h; never more than the clock hours left; 0 once past.
+    expect(hoursPerPersonBeforeDeadline('2026-11-16T18:00:00Z', 6, now)).toBe(12);
+    expect(hoursPerPersonBeforeDeadline('2026-11-14T21:00:00Z', 24, now)).toBe(3);
+    expect(hoursPerPersonBeforeDeadline('2026-11-13T18:00:00Z', 6, now)).toBe(0);
+    const ctx = JSON.parse(buildExtractUserMessage(req({ deadline: '2026-11-16T18:00:00Z' }), now).split('\n')[1]!);
+    expect(ctx).toMatchObject({ now: '2026-11-14T18:00:00.000Z', hoursPerPersonBeforeDeadline: 12, knownMembers: ['Sam Lee'] });
+  });
+
+  it('keeps placeholder teammates and suggested owners from a short idea', () => {
+    const p = postProcessExtract(
+      out(
+        [task({ key: 'a', ownerName: 'Teammate 1' }), task({ key: 'b', ownerName: 'Teammate 2' })],
+        {
+          members: [{ name: 'Teammate 1', hoursPerDay: null }, { name: 'Teammate 2', hoursPerDay: null }],
+          openQuestions: [{ taskKey: null, field: 'owner', question: 'Owners were suggested to balance the work.' }],
+        },
+      ),
+      req({ members: [] }),
+      ctx,
+    );
+    expect(p.members.map((m) => m.name)).toEqual(['Teammate 1', 'Teammate 2']);
+    expect(p.tasks.map((t) => t.ownerId)).toEqual(['m1', 'm2']);
+    expect(p.openQuestions.filter((q) => q.field === 'owner')).toHaveLength(1);
   });
 
   it('puts pasted text only inside project_text tags and neutralises closing tags', () => {

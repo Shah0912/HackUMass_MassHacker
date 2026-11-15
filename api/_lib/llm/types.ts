@@ -1,7 +1,7 @@
 // Provider-neutral contract for one structured-output model call.
 // Endpoints (extract, rescue) depend only on this file and ./index.ts, never on an SDK.
 
-export type ProviderName = 'claude' | 'gemini';
+export type ProviderName = 'claude' | 'gemini' | 'grok';
 
 export type LlmErrorCode =
   | 'MODEL_REFUSED'
@@ -31,7 +31,7 @@ export interface JsonCallRequest {
   /** Plain JSON Schema, already made provider-safe by toProviderSchema. */
   schema: Record<string, unknown>;
   maxOutputTokens: number;
-  /** Claude only; ignored by Gemini. */
+  /** Claude and Grok (reasoning effort); ignored by Gemini. */
   effort?: 'low' | 'medium' | 'high';
   signal: AbortSignal;
 }

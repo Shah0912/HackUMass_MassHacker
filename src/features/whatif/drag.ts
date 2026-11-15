@@ -1,5 +1,5 @@
 /** Payload type for dragging a graph node onto a person to reassign it. */
-export const TASK_DRAG_TYPE = 'application/x-linchpin-task';
+export const TASK_DRAG_TYPE = 'application/x-clearpath-task';
 
 export function writeTaskDrag(data: DataTransfer, taskId: string): void {
   data.setData(TASK_DRAG_TYPE, taskId);

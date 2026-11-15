@@ -431,7 +431,7 @@ function computeRisks(project: Project, a: Analysis, now: Date): Risk[] {
     }
   }
 
-  // task_bottleneck: only the linchpin, so the panel tells one story.
+  // task_bottleneck: only the top bottleneck, so the panel tells one story.
   const bottlenecks = unfinished.filter((t) => {
     const n = a.tasks[t.id]!.downstreamCount;
     return t.id === a.bottleneckTaskId && n >= 3 && n >= 0.25 * unfinished.length;

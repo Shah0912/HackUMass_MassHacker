@@ -1,6 +1,6 @@
-# Linchpin: 3-Person Build Plan & Checklist
+# ClearPath: 3-Person Build Plan & Checklist
 
-Derived from [LinchpinPlanRequirements.md](LinchpinPlanRequirements.md). The spec's 5 workstreams (A–E, 39.5 h total) are folded into 3 owners at ~12–14.5 h each. Hours are elapsed from the start (H0).
+Derived from [ClearPathPlanRequirements.md](ClearPathPlanRequirements.md). The spec's 5 workstreams (A–E, 39.5 h total) are folded into 3 owners at ~12–14.5 h each. Hours are elapsed from the start (H0).
 
 ## Who owns what
 
@@ -162,7 +162,7 @@ Derived from [LinchpinPlanRequirements.md](LinchpinPlanRequirements.md). The spe
 ### T14 Demo sample project and raw text (H10–H11) — F-09
 - [ ] `src/data/sample-raw-input.txt`: real-feeling chat, out of order, informal, ≥ 1 implied dependency
 - [ ] `fixtures/sample-project.json` rebuilt: 14–18 tasks, 4 members
-- [ ] One unstarted task with ≥ 5 unfinished downstream (the linchpin)
+- [ ] One unstarted task with ≥ 5 unfinished downstream (the bottleneck)
 - [ ] One member owns > 50% of critical hours
 - [ ] Critical path ≈ 6 h longer than available time
 - [ ] One reassignment flips the verdict to on track
@@ -184,10 +184,10 @@ Derived from [LinchpinPlanRequirements.md](LinchpinPlanRequirements.md). The spe
 ## P3 – Store, intake & dashboard
 
 ### T08 Store, `localStorage`, JSON import/export (H2–H4) — F-10
-- [ ] Zustand store with keys `linchpin:v1:projects`, `:active`, `:intakeDraft`
+- [ ] Zustand store with keys `clearpath:v1:projects`, `:active`, `:intakeDraft`
 - [ ] Writes debounced 300 ms; every read/write in try/catch
 - [ ] Unknown `schemaVersion` listed as unreadable, offered for export, never deleted
-- [ ] Export `<name>.linchpin.json`; import → Zod validate → new `id` → save
+- [ ] Export `<name>.clearpath.json`; import → Zod validate → new `id` → save
 - [ ] Invalid import file changes nothing
 - [ ] Export then import gives an identical project
 - [ ] Selectors that call `analyse(project, now)` (never stored)

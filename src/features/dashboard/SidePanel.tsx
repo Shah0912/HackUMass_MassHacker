@@ -77,7 +77,7 @@ function Risks({ analysis, activeRiskId, onRisk, onTryFix, readOnly }: Parameter
       <div className="flex flex-col items-center gap-2 py-10 text-center">
         <IconCheckCircle size={28} className="text-emerald-600" />
         <p className="font-semibold text-slate-900">No risks found</p>
-        <p className="max-w-60 text-sm text-slate-600">Nobody is overloaded and you have {fmtH(analysis.bufferHours)} to spare. Keep the linchpin moving.</p>
+        <p className="max-w-60 text-sm text-slate-600">Nobody is overloaded and you have {fmtH(analysis.bufferHours)} to spare. Keep the bottleneck task moving.</p>
       </div>
     );
   }
