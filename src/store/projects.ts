@@ -13,6 +13,8 @@ export interface IntakeDraft {
   workHoursPerDay: number;
   members: { name: string; hoursPerDay: number }[];
   detectMembers: boolean;
+  /** True once the user changes the deadline picker; until then a due date in the notes wins. */
+  deadlineTouched?: boolean;
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -23,7 +25,7 @@ export function toLocalInput(d: Date): string {
 export function emptyDraft(): IntakeDraft {
   const d = new Date(Date.now() + 2 * 24 * 3_600_000);
   d.setHours(18, 0, 0, 0);
-  return { name: '', text: '', deadline: toLocalInput(d), workHoursPerDay: 6, members: [{ name: '', hoursPerDay: 4 }], detectMembers: true };
+  return { name: '', text: '', deadline: toLocalInput(d), workHoursPerDay: 6, members: [{ name: '', hoursPerDay: 4 }], detectMembers: true, deadlineTouched: false };
 }
 
 export interface WhatIf {
@@ -95,7 +97,12 @@ export const useStore = create<State>()(
       updateProject: (id, fn) =>
         set((s) => {
           const p = s.projects[id];
-          return p ? { projects: { ...s.projects, [id]: fn(p) } } : {};
+          if (!p) return {};
+          const next = fn(p);
+          if (next === p) return {};
+          // Stamp the edit time so cloud sync can tell which copy is newer.
+          const stamped = next.updatedAt === p.updatedAt ? { ...next, updatedAt: new Date().toISOString() } : next;
+          return { projects: { ...s.projects, [id]: stamped } };
         }),
       deleteProject: (id) =>
         set((s) => {

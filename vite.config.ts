@@ -16,6 +16,8 @@ function localApi(): Plugin {
     apply: 'serve',
     configureServer(server) {
       Object.assign(process.env, { ...loadEnv(server.config.mode, process.cwd(), ''), ...process.env });
+      // Database settings live in their own file (MONGODB_URI etc.); server-only, like the AI keys.
+      if (existsSync('.env.mongo')) process.loadEnvFile('.env.mongo');
       server.middlewares.use(async (req, res, next) => {
         const match = /^\/api\/([a-z0-9-]+)\/?(?:\?.*)?$/i.exec(req.url ?? '');
         const file = match && fileURLToPath(new URL(`./api/${match[1]}.ts`, import.meta.url));

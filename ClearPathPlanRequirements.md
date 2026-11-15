@@ -480,6 +480,7 @@ Every model call is followed by a code check, and a person sees the result befor
 ```ts
 {
   projectName: string | null,
+  dueDate: string | null,        // due date stated in the text, user's local "YYYY-MM-DDTHH:mm" or "YYYY-MM-DD"
   members: { name: string, hoursPerDay: number | null }[],
   tasks: {
     key: string,                 // model's own short slug, e.g. "db-schema"
@@ -495,6 +496,8 @@ Every model call is followed by a code check, and a person sees the result befor
   openQuestions: { taskKey: string | null, field: string, question: string }[]
 }
 ```
+
+**Deadline from the text (added 2026-11-15).** The extract request also carries two optional fields: `deadlineFromUser` (false when the user never touched the deadline picker; missing means true) and `timeZone` (IANA name). When `deadlineFromUser` is false and the model returns a `dueDate` that is still in the future, the server converts it from the user's time zone and uses it as the project deadline (a date with no time means 23:59). Otherwise the form's deadline wins. The review screen shows the deadline and says when it came from the notes.
 
 ### Extract: system prompt must say
 

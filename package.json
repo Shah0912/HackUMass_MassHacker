@@ -12,13 +12,14 @@
     "typecheck": "tsc --noEmit",
     "eval:extract": "tsx evals/extract/run.ts",
     "ai:smoke": "tsx --env-file-if-exists=.env.local scripts/ai-smoke.ts",
-    "start": "node --env-file-if-exists=.env --import tsx server/index.ts"
+    "start": "node --env-file-if-exists=.env --env-file-if-exists=.env.mongo --import tsx server/index.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
     "@dagrejs/dagre": "^3.1.3",
     "@google/genai": "^3.3.0",
     "@xyflow/react": "^12.12.1",
+    "mongodb": "^7.9.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.5",

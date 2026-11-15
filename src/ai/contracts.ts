@@ -48,12 +48,18 @@ export const ExtractRequestSchema = z.object({
   workHoursPerDay: z.number().positive().max(24),
   members: z.array(z.object({ name: z.string().max(60), hoursPerDay: z.number().min(0).max(24) })).max(12),
   detectMembers: z.boolean(),
+  /** false = the user never touched the deadline picker, so a due date stated in the text wins. Missing = true. */
+  deadlineFromUser: z.boolean().optional(),
+  /** The user's IANA time zone (e.g. "America/New_York"), to read "due Sunday 5pm" in local time. */
+  timeZone: z.string().max(64).optional(),
 });
 export type ExtractRequest = z.infer<typeof ExtractRequestSchema>;
 
 /** What the model must return (spec: "Extract: model output schema"). All fields required; nullable where optional. */
 export const ExtractModelOutputSchema = z.object({
   projectName: z.string().nullable(),
+  /** Due date stated in the text, as local "YYYY-MM-DDTHH:mm" (or "YYYY-MM-DD"); null if none. */
+  dueDate: z.string().nullable(),
   members: z.array(z.object({ name: z.string(), hoursPerDay: z.number().nullable() })),
   tasks: z.array(
     z.object({

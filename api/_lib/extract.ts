@@ -3,6 +3,7 @@
 import type { ExtractModelOutput, ExtractRequest } from '../../src/ai/contracts';
 import { MAX_TASK_HOURS, splitOversizedTasks } from '../../src/core/split';
 import { memberColor, type Member, type OpenQuestion, type Project, type Task } from '../../src/core/types';
+import { formatLocalNow, zonedLocalToUtc } from './time';
 
 const MAX_TASKS = 150;
 const MAX_MEMBERS = 12;
@@ -23,12 +24,12 @@ Rules:
 2. Tasks are work still to be done or in progress for this project. Skip pure discussion, background, ideas the team rejected or postponed ("let's not", "maybe later", "out of scope", "v2"), and work for other projects.
 3. A transcript: a decision or agreement implies a task even if nobody says "task". A later statement overrides an earlier one (scope changes, reassignments, "actually I already finished that").
 4. A doc: turn each feature or requirement into the concrete build work it needs (for example data model, API, UI screen, integration, testing, deployment, demo). Include obvious supporting work the doc implies, but do not invent features it does not describe.
-5. When the text names few or no tasks, as a short idea usually does, plan the whole job yourself. List the core features the idea clearly needs for a working first version, then the supporting work any project of that kind needs: setup, data, the main screens or parts, connecting them, testing, deployment if it will be shown live, and a demo or presentation if there is a deadline. The project can be anything (an app, an event, a report, a video), so plan the work that kind of project really involves. Keep to a lean first version: no nice-to-have features the text does not ask for. Fit the plan to the team: Context gives hoursPerPersonBeforeDeadline, so keep the total estimate at or below that times the team size. If the idea cannot fit, plan the core and ask a "scope" question about what you left out. Return no tasks only if the text describes no project at all.
+5. When the text names few or no tasks, as a short idea usually does, plan the whole job yourself. List the core features the idea clearly needs for a working first version, then the supporting work any project of that kind needs: setup, data, the main screens or parts, connecting them, testing, deployment if it will be shown live, and a demo or presentation if there is a deadline. The project can be anything (an app, an event, a report, a video), so plan the work that kind of project really involves. Keep to a lean first version: no nice-to-have features the text does not ask for. Fit the plan to the team: Context gives hoursPerPersonBeforeDeadline, so keep the total estimate at or below that times the team size. If Context.deadlineSource is "default" and the text states its own due date (rule 18), size the plan to that date instead: days left times Context.workHoursPerDay per person. If the idea cannot fit, plan the core and ask a "scope" question about what you left out. Return no tasks only if the text describes no project at all.
 6. One task = one deliverable a single person could finish in 0.5 to 4 hours. No task may be longer than 4 hours: break any bigger piece of work into smaller tasks of at most 4 hours each, where each is a real sub-deliverable (for example \"Build the menu endpoints\" and \"Build the order endpoints\", not \"part 1\" and \"part 2\"), with dependencies between them only where one truly needs the other. Merge trivial ones. Aim for 8 to 30 tasks.
 7. Titles start with a verb, max 80 characters, specific enough to act on ("Build the checkout screen", not "Frontend stuff").
-8. Add a dependency only when task B truly cannot start before task A finishes: stated in the text, or forced by the work (a UI screen that calls an API depends on that API; the API depends on the data model it reads; a demo video depends on the features it shows). Do not chain tasks just because they appear in order.
+8. Add a dependency only when task B truly cannot start before task A finishes: stated in the text, or forced by the work (a UI screen that calls an API depends on that API; the API depends on the data model it reads; a demo video depends on the features it shows). Do not chain tasks just because they appear in order. Setup work is a real prerequisite: if there is a task that creates the shared base everyone builds on (repo, project skeleton, dev environment, hosting, accounts or tools needed to start), every task that writes code or content into that base depends on it, directly or through another task. Never leave a setup task with nothing depending on it. Planning work that needs no base (designs, mockups, data model on paper, research, the pitch deck) does not depend on it.
 9. ownerName only when the text assigns the task or a person commits to it ("I'll take", "X will", "action item: X", "assigned to X"). In a transcript, the speaker who says "I'll do it" is the owner. Use the person's name as written. Otherwise null and an open question with field "owner", except as rule 10 says. Never guess from who talked most or about a topic.
-10. Team size and suggested owners. If knownMembers is empty and the text gives a team size but no names ("3 of us", "a team of four"), add that many members named "Teammate 1", "Teammate 2" and so on. If the text assigns no work at all (typical for a short idea) but the team is known (knownMembers, people named as working on it, or those teammates), suggest an owner for every unfinished task instead: give each person a fair share of the hours, and keep related tasks with the same person so people can work in parallel. Then add one open question with taskKey null and field "owner": "Owners were suggested to balance the work. Swap them if someone prefers different tasks." If the text assigns some work, follow rule 9 for every task. If knownMembers is empty and the text gives neither names nor a team size, never invent people: members stays empty and every ownerName is null.
+10. Team size and suggested owners. If knownMembers is empty and the text gives a team size but no names ("3 of us", "a team of four"), add that many members named "Member 1", "Member 2" and so on. If only some are named ("Sam plus two others", "me, Ana and Jo"), add the named ones as written and name the rest "Member 1", "Member 2" and so on. Words like "me", "I", "myself" or "someone" are not names: the writer of "me, Ana and Jo" is "Member 1". If the text assigns no work at all (typical for a short idea) but the team is known (knownMembers, people named as working on it, or those teammates), suggest an owner for every unfinished task instead: give each person a fair share of the hours, and keep related tasks with the same person so people can work in parallel. Then add one open question with taskKey null and field "owner": "Owners were suggested to balance the work. Swap them if someone prefers different tasks." If the text assigns some work, follow rule 9 for every task. If knownMembers is empty and the text gives neither names nor a team size, never invent people: members stays empty and every ownerName is null.
 11. If the text gives no estimate, give a typical one for a student team and set estimateInferred to true.
 12. status from the latest mention ("done", "finished", "merged" means done; "working on", "halfway" means in_progress; "stuck", "waiting on", "blocked" means blocked); default "todo".
 13. evidence is a short verbatim quote (max 160 characters) copied exactly from the text that supports the task. For a task you planned from a short idea, quote the part of the idea it serves.
@@ -36,6 +37,7 @@ Rules:
 15. key is your own short slug for the task (e.g. "db-schema"), unique within the list. dependsOnKeys lists keys of other tasks in this output.
 16. members lists every person who is assigned or commits to work (not people only mentioned in passing, such as a client or a professor), plus any teammates added under rule 10; hoursPerDay only if the text states it, else null.
 17. projectName only if the text names the project or product, else null.
+18. dueDate: when the text says when the whole project is due or ends ("due Sunday", "demo is Friday at 3pm", "hackathon ends Nov 22 at noon", "in two weeks"), give that moment as the user's local time "YYYY-MM-DDTHH:mm". Work out relative days from Context.nowLocal (if "Sunday" is today, it means today unless the text says next week). If only a day is given, use "YYYY-MM-DD". Use the final deadline for the whole project, not a milestone along the way. Otherwise null. Never copy Context.deadline here.
 
 Example 1 input (meeting transcript):
 <project_text>
@@ -48,7 +50,7 @@ Action items: Sam - schema. Priya - API.
 </project_text>
 
 Example 1 output:
-{"projectName":null,"members":[{"name":"Sam","hoursPerDay":null},{"name":"Priya","hoursPerDay":null}],"tasks":[{"key":"db-schema","title":"Design the database schema","ownerName":"Sam","estimateHours":3,"estimateInferred":false,"status":"todo","dependsOnKeys":[],"evidence":"I'll do the DB schema tonight, should take like 3 hours.","confidence":"high"},{"key":"auth-api","title":"Build the login API","ownerName":"Priya","estimateHours":3,"estimateInferred":true,"status":"todo","dependsOnKeys":["db-schema"],"evidence":"I can build the API once the schema's in.","confidence":"high"},{"key":"order-api","title":"Build the order API","ownerName":"Priya","estimateHours":3,"estimateInferred":true,"status":"todo","dependsOnKeys":["db-schema"],"evidence":"I can build the API once the schema's in.","confidence":"high"},{"key":"order-ui","title":"Build the login and order screens","ownerName":null,"estimateHours":4,"estimateInferred":true,"status":"todo","dependsOnKeys":["auth-api","order-api"],"evidence":"for the demo we need login and the order flow","confidence":"medium"},{"key":"landing","title":"Build the landing page","ownerName":null,"estimateHours":3,"estimateInferred":true,"status":"todo","dependsOnKeys":[],"evidence":"someone also needs to make the landing page.","confidence":"medium"}],"openQuestions":[{"taskKey":"order-ui","field":"owner","question":"Who will build the login and order screens?"},{"taskKey":"landing","field":"owner","question":"Who will build the landing page?"}]}
+{"projectName":null,"dueDate":null,"members":[{"name":"Sam","hoursPerDay":null},{"name":"Priya","hoursPerDay":null}],"tasks":[{"key":"db-schema","title":"Design the database schema","ownerName":"Sam","estimateHours":3,"estimateInferred":false,"status":"todo","dependsOnKeys":[],"evidence":"I'll do the DB schema tonight, should take like 3 hours.","confidence":"high"},{"key":"auth-api","title":"Build the login API","ownerName":"Priya","estimateHours":3,"estimateInferred":true,"status":"todo","dependsOnKeys":["db-schema"],"evidence":"I can build the API once the schema's in.","confidence":"high"},{"key":"order-api","title":"Build the order API","ownerName":"Priya","estimateHours":3,"estimateInferred":true,"status":"todo","dependsOnKeys":["db-schema"],"evidence":"I can build the API once the schema's in.","confidence":"high"},{"key":"order-ui","title":"Build the login and order screens","ownerName":null,"estimateHours":4,"estimateInferred":true,"status":"todo","dependsOnKeys":["auth-api","order-api"],"evidence":"for the demo we need login and the order flow","confidence":"medium"},{"key":"landing","title":"Build the landing page","ownerName":null,"estimateHours":3,"estimateInferred":true,"status":"todo","dependsOnKeys":[],"evidence":"someone also needs to make the landing page.","confidence":"medium"}],"openQuestions":[{"taskKey":"order-ui","field":"owner","question":"Who will build the login and order screens?"},{"taskKey":"landing","field":"owner","question":"Who will build the landing page?"}]}
 
 Example 2 input (feature doc):
 <project_text>
@@ -59,15 +61,26 @@ Out of scope: chat, mobile app.
 </project_text>
 
 Example 2 output:
-{"projectName":"StudyBuddy","members":[],"tasks":[{"key":"data-model","title":"Design the users, courses and requests data model","ownerName":null,"estimateHours":2,"estimateInferred":true,"status":"todo","dependsOnKeys":[],"evidence":"See classmates in the same course and send a request.","confidence":"medium"},{"key":"auth","title":"Implement sign-in with school email","ownerName":null,"estimateHours":4,"estimateInferred":true,"status":"todo","dependsOnKeys":["data-model"],"evidence":"Sign in with school email.","confidence":"high"},{"key":"courses","title":"Build the course picker","ownerName":null,"estimateHours":3,"estimateInferred":true,"status":"todo","dependsOnKeys":["auth"],"evidence":"Pick your courses.","confidence":"high"},{"key":"match","title":"Build the classmates list and partner request flow","ownerName":null,"estimateHours":4,"estimateInferred":true,"status":"todo","dependsOnKeys":["courses"],"evidence":"See classmates in the same course and send a request.","confidence":"high"}],"openQuestions":[{"taskKey":null,"field":"owner","question":"Who is working on StudyBuddy, and who owns each part?"}]}
+{"projectName":"StudyBuddy","dueDate":null,"members":[],"tasks":[{"key":"data-model","title":"Design the users, courses and requests data model","ownerName":null,"estimateHours":2,"estimateInferred":true,"status":"todo","dependsOnKeys":[],"evidence":"See classmates in the same course and send a request.","confidence":"medium"},{"key":"auth","title":"Implement sign-in with school email","ownerName":null,"estimateHours":4,"estimateInferred":true,"status":"todo","dependsOnKeys":["data-model"],"evidence":"Sign in with school email.","confidence":"high"},{"key":"courses","title":"Build the course picker","ownerName":null,"estimateHours":3,"estimateInferred":true,"status":"todo","dependsOnKeys":["auth"],"evidence":"Pick your courses.","confidence":"high"},{"key":"match","title":"Build the classmates list and partner request flow","ownerName":null,"estimateHours":4,"estimateInferred":true,"status":"todo","dependsOnKeys":["courses"],"evidence":"See classmates in the same course and send a request.","confidence":"high"}],"openQuestions":[{"taskKey":null,"field":"owner","question":"Who is working on StudyBuddy, and who owns each part?"}]}
 
 Example 3 input (short project idea):
 <project_text>
-Habit tracker web app where friends keep each other accountable. 3 of us, hackathon ends Sunday.
+Habit tracker web app where friends keep each other accountable. 3 of us, hackathon ends Nov 22 at noon.
 </project_text>
 
 Example 3 output:
-{"projectName":null,"members":[{"name":"Teammate 1","hoursPerDay":null},{"name":"Teammate 2","hoursPerDay":null},{"name":"Teammate 3","hoursPerDay":null}],"tasks":[{"key":"setup","title":"Set up the repo, hosting and app skeleton","ownerName":"Teammate 1","estimateHours":2,"estimateInferred":true,"status":"todo","dependsOnKeys":[],"evidence":"Habit tracker web app","confidence":"medium"},{"key":"data-model","title":"Design the users, habits, friends and check-ins data model","ownerName":"Teammate 2","estimateHours":2,"estimateInferred":true,"status":"todo","dependsOnKeys":[],"evidence":"Habit tracker web app where friends keep each other accountable.","confidence":"medium"},{"key":"auth","title":"Build sign-up and login","ownerName":"Teammate 1","estimateHours":3,"estimateInferred":true,"status":"todo","dependsOnKeys":["setup","data-model"],"evidence":"Habit tracker web app","confidence":"medium"},{"key":"habits-api","title":"Build the habits and daily check-in API","ownerName":"Teammate 2","estimateHours":4,"estimateInferred":true,"status":"todo","dependsOnKeys":["data-model"],"evidence":"Habit tracker web app","confidence":"medium"},{"key":"friends-api","title":"Build the add-friend and friends' streaks API","ownerName":"Teammate 2","estimateHours":3,"estimateInferred":true,"status":"todo","dependsOnKeys":["data-model"],"evidence":"friends keep each other accountable","confidence":"medium"},{"key":"habits-ui","title":"Build the habit list and check-in screen","ownerName":"Teammate 3","estimateHours":4,"estimateInferred":true,"status":"todo","dependsOnKeys":["habits-api"],"evidence":"Habit tracker web app","confidence":"medium"},{"key":"friends-ui","title":"Build the friends feed showing each other's streaks","ownerName":"Teammate 3","estimateHours":4,"estimateInferred":true,"status":"todo","dependsOnKeys":["friends-api"],"evidence":"friends keep each other accountable","confidence":"medium"},{"key":"test","title":"Test the main flows end to end and fix bugs","ownerName":"Teammate 1","estimateHours":3,"estimateInferred":true,"status":"todo","dependsOnKeys":["auth","habits-ui","friends-ui"],"evidence":"Habit tracker web app where friends keep each other accountable.","confidence":"medium"},{"key":"demo","title":"Prepare the demo and slides","ownerName":"Teammate 1","estimateHours":2,"estimateInferred":true,"status":"todo","dependsOnKeys":["test"],"evidence":"hackathon ends Sunday","confidence":"medium"}],"openQuestions":[{"taskKey":null,"field":"owner","question":"Owners were suggested to balance the work. Swap them if someone prefers different tasks."},{"taskKey":null,"field":"scope","question":"Should friends be able to nudge each other with reminders, or is seeing streaks enough for the first version?"}]}`;
+{"projectName":null,"dueDate":"2026-11-22T12:00","members":[{"name":"Member 1","hoursPerDay":null},{"name":"Member 2","hoursPerDay":null},{"name":"Member 3","hoursPerDay":null}],"tasks":[{"key":"setup","title":"Set up the repo, hosting and app skeleton","ownerName":"Member 1","estimateHours":2,"estimateInferred":true,"status":"todo","dependsOnKeys":[],"evidence":"Habit tracker web app","confidence":"medium"},{"key":"data-model","title":"Design the users, habits, friends and check-ins data model","ownerName":"Member 2","estimateHours":2,"estimateInferred":true,"status":"todo","dependsOnKeys":[],"evidence":"Habit tracker web app where friends keep each other accountable.","confidence":"medium"},{"key":"auth","title":"Build sign-up and login","ownerName":"Member 1","estimateHours":3,"estimateInferred":true,"status":"todo","dependsOnKeys":["setup","data-model"],"evidence":"Habit tracker web app","confidence":"medium"},{"key":"habits-api","title":"Build the habits and daily check-in API","ownerName":"Member 2","estimateHours":4,"estimateInferred":true,"status":"todo","dependsOnKeys":["setup","data-model"],"evidence":"Habit tracker web app","confidence":"medium"},{"key":"friends-api","title":"Build the add-friend and friends' streaks API","ownerName":"Member 2","estimateHours":3,"estimateInferred":true,"status":"todo","dependsOnKeys":["setup","data-model"],"evidence":"friends keep each other accountable","confidence":"medium"},{"key":"habits-ui","title":"Build the habit list and check-in screen","ownerName":"Member 3","estimateHours":4,"estimateInferred":true,"status":"todo","dependsOnKeys":["habits-api"],"evidence":"Habit tracker web app","confidence":"medium"},{"key":"friends-ui","title":"Build the friends feed showing each other's streaks","ownerName":"Member 3","estimateHours":4,"estimateInferred":true,"status":"todo","dependsOnKeys":["friends-api"],"evidence":"friends keep each other accountable","confidence":"medium"},{"key":"test","title":"Test the main flows end to end and fix bugs","ownerName":"Member 1","estimateHours":3,"estimateInferred":true,"status":"todo","dependsOnKeys":["auth","habits-ui","friends-ui"],"evidence":"Habit tracker web app where friends keep each other accountable.","confidence":"medium"},{"key":"demo","title":"Prepare the demo and slides","ownerName":"Member 1","estimateHours":2,"estimateInferred":true,"status":"todo","dependsOnKeys":["test"],"evidence":"hackathon ends Nov 22 at noon","confidence":"medium"}],"openQuestions":[{"taskKey":null,"field":"owner","question":"Owners were suggested to balance the work. Swap them if someone prefers different tasks."},{"taskKey":null,"field":"scope","question":"Should friends be able to nudge each other with reminders, or is seeing streaks enough for the first version?"}]}`;
+
+/**
+ * The project deadline: the user's pick, unless they never touched the picker (deadlineFromUser
+ * false) and the text states a due date that is still in the future.
+ */
+export function resolveDeadline(req: ExtractRequest, dueDate: string | null, now: Date): { deadline: string; fromText: boolean } {
+  if (req.deadlineFromUser !== false || !dueDate) return { deadline: req.deadline, fromText: false };
+  const d = zonedLocalToUtc(dueDate, req.timeZone);
+  if (!d || d.getTime() <= now.getTime()) return { deadline: req.deadline, fromText: false };
+  return { deadline: d.toISOString(), fromText: true };
+}
 
 /** Hours one person can work before the deadline: days left × work hours per day. Used only to size the plan. */
 export function hoursPerPersonBeforeDeadline(deadline: string, workHoursPerDay: number, now: Date): number {
@@ -76,11 +89,16 @@ export function hoursPerPersonBeforeDeadline(deadline: string, workHoursPerDay: 
   return Math.round(Math.min(hoursLeft, (hoursLeft / 24) * workHoursPerDay));
 }
 
-/** Members, deadline and time budget as JSON, then the untrusted text inside tags. */
+/** Members, time, deadline and time budget as JSON, then the untrusted text inside tags. */
 export function buildExtractUserMessage(req: ExtractRequest, now: Date = new Date()): string {
   const context = {
     now: now.toISOString(),
+    nowLocal: formatLocalNow(now, req.timeZone),
+    timeZone: req.timeZone ?? 'UTC',
     deadline: req.deadline,
+    // "default" = the user never set a deadline, so one stated in the text takes over.
+    deadlineSource: req.deadlineFromUser === false ? 'default' : 'user',
+    workHoursPerDay: req.workHoursPerDay,
     hoursPerPersonBeforeDeadline: hoursPerPersonBeforeDeadline(req.deadline, req.workHoursPerDay, now),
     knownMembers: req.members.map((m) => m.name.trim()).filter(Boolean),
   };
@@ -120,7 +138,7 @@ export function clampEstimate(h: number): number {
 /**
  * Find a member by exact (case-insensitive) name, then by unique first-name match. The first-name
  * match applies only when one side is a bare first name ("Sam" ↔ "Sam Lee"), so two full names that
- * share a first word ("Teammate 1" and "Teammate 2") stay different people.
+ * share a first word ("Member 1" and "Member 2") stay different people.
  */
 export function matchMember(name: string, members: Member[]): Member | null {
   const n = norm(name);
@@ -133,13 +151,41 @@ export function matchMember(name: string, members: Member[]): Member | null {
   return byFirst.length === 1 ? byFirst[0]! : null;
 }
 
+// Words that refer to a person without naming them; such members become "Member N".
+const NOT_A_NAME = new Set(['me', 'i', 'myself', 'you', 'yourself', 'us', 'we', 'someone', 'somebody', 'anyone', 'the writer', 'the speaker', 'unknown', 'tbd']);
+
+/** Rename members (and task owners) called "me", "I", "someone"… to the next free "Member N". */
+export function nameUnnamedMembers(out: ExtractModelOutput): ExtractModelOutput {
+  const isUnnamed = (n: string) => NOT_A_NAME.has(norm(n));
+  const names = [...out.members.map((m) => m.name), ...out.tasks.map((t) => t.ownerName ?? '')];
+  if (!names.some(isUnnamed)) return out;
+  const used = new Set(names.map((n) => /^member (\d+)$/.exec(norm(n))?.[1]).filter(Boolean).map(Number));
+  const renamed = new Map<string, string>();
+  const rename = (n: string) => {
+    const key = norm(n);
+    if (!renamed.has(key)) {
+      let k = 1;
+      while (used.has(k)) k++;
+      used.add(k);
+      renamed.set(key, `Member ${k}`);
+    }
+    return renamed.get(key)!;
+  };
+  return {
+    ...out,
+    members: out.members.map((m) => (isUnnamed(m.name) ? { ...m, name: rename(m.name) } : m)),
+    tasks: out.tasks.map((t) => (t.ownerName && isUnnamed(t.ownerName) ? { ...t, ownerName: rename(t.ownerName) } : t)),
+  };
+}
+
 export interface PostProcessContext {
   id: string;
   now: Date;
 }
 
 /** Model output + request → a stored Project (spec: "Extract: post-processing"). Never throws on model content. */
-export function postProcessExtract(out: ExtractModelOutput, req: ExtractRequest, ctx: PostProcessContext): Project {
+export function postProcessExtract(raw: ExtractModelOutput, req: ExtractRequest, ctx: PostProcessContext): Project {
+  const out = nameUnnamedMembers(raw);
   // Members: form members first (their hours win), then detected ones if allowed.
   const members: Member[] = [];
   const addMember = (name: string, hoursPerDay: number): Member | null => {
@@ -233,7 +279,7 @@ export function postProcessExtract(out: ExtractModelOutput, req: ExtractRequest,
     schemaVersion: 1,
     id: ctx.id,
     name: req.name.trim() || out.projectName?.trim().slice(0, 120) || 'Untitled project',
-    deadline: req.deadline,
+    deadline: resolveDeadline(req, out.dueDate, ctx.now).deadline,
     workHoursPerDay: req.workHoursPerDay,
     members,
     // Last line of defence for the size rule: anything still over the limit becomes chained parts.

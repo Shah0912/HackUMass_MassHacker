@@ -20,6 +20,10 @@ export interface ExtractInput {
   workHoursPerDay: number;
   members: { name: string; hoursPerDay: number }[];
   detectMembers: boolean;
+  /** false = the user never touched the deadline picker; a due date in the text then wins. */
+  deadlineFromUser?: boolean;
+  /** IANA time zone, for reading "due Sunday 5pm" in local time. */
+  timeZone?: string;
 }
 
 export class ApiClientError extends Error {

@@ -5,7 +5,7 @@ import { Logo } from '@/app/App';
 import { ApiClientError, extractProject, MOCK_AI } from '@/ai/client';
 import { LIMITS } from '@/core/types';
 import { sampleRawInput } from '@/mocks/sampleProject';
-import { useStore } from '@/store/projects';
+import { emptyDraft, useStore } from '@/store/projects';
 import { Button, Card, cn } from '@/components/ui';
 import { IconAlert, IconArrowLeft, IconCheck, IconPlus, IconSpinner, IconTrash, IconUpload, IconX } from '@/components/icons';
 
@@ -30,6 +30,12 @@ export function IntakePage() {
     abortRef.current?.abort();
     if (timerRef.current) clearInterval(timerRef.current);
   }, []);
+
+  // An untouched default from an old saved draft may have passed: quietly move it forward.
+  const deadlineTouched = !!draft.deadlineTouched;
+  useEffect(() => {
+    if (!deadlineTouched && !(Date.parse(draft.deadline) > Date.now())) setDraft({ deadline: emptyDraft().deadline });
+  }, [deadlineTouched, draft.deadline, setDraft]);
 
   const chars = draft.text.length;
   const tooLong = chars > LIMITS.maxChars;
@@ -56,12 +62,16 @@ export function IntakePage() {
           workHoursPerDay: draft.workHoursPerDay,
           members: draft.members.filter((m) => m.name.trim()),
           detectMembers: draft.detectMembers,
+          deadlineFromUser: deadlineTouched,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         },
         controller.signal,
       );
       const id = saveProject(project);
       resetDraft();
-      navigate(`/p/${id}/review`);
+      // Tell the review screen when the deadline came from the notes, so it can say so.
+      const fromNotes = Date.parse(project.deadline) !== deadlineMs;
+      navigate(`/p/${id}/review${fromNotes ? '?deadline=notes' : ''}`);
     } catch (err) {
       if (controller.signal.aborted) return;
       const e = err instanceof ApiClientError ? err : new ApiClientError('UPSTREAM_ERROR', 'Something went wrong. Your text is safe; try again.', true);
@@ -190,7 +200,31 @@ export function IntakePage() {
                   <input id="name" value={draft.name} onChange={(e) => setDraft({ name: e.target.value })} className={inputCls} placeholder="e.g. Campus Eats" />
                 </Field>
                 <Field label="Deadline" htmlFor="deadline" required error={touched && !deadlineOk ? 'Pick a date and time in the future.' : undefined}>
-                  <input id="deadline" type="datetime-local" value={draft.deadline} onChange={(e) => setDraft({ deadline: e.target.value })} className={inputCls} aria-invalid={touched && !deadlineOk} />
+                  <input
+                    id="deadline"
+                    type="datetime-local"
+                    value={draft.deadline}
+                    onChange={(e) => setDraft({ deadline: e.target.value, deadlineTouched: true })}
+                    className={inputCls}
+                    aria-invalid={touched && !deadlineOk}
+                    aria-describedby="deadline-help"
+                  />
+                  <p id="deadline-help" className="mt-1 text-xs leading-relaxed text-slate-500">
+                    {deadlineTouched ? (
+                      <>
+                        Using this date, even if your notes mention another.{' '}
+                        <button
+                          type="button"
+                          className="text-blue-700 underline-offset-2 hover:underline"
+                          onClick={() => setDraft({ deadline: emptyDraft().deadline, deadlineTouched: false })}
+                        >
+                          Use the date from my notes
+                        </button>
+                      </>
+                    ) : (
+                      <>Mention a due date in your notes ("due Sunday 5pm") and we'll use it. Pick a date here to override the notes.</>
+                    )}
+                  </p>
                 </Field>
                 <Field label="Team work hours per day" htmlFor="whpd" hint="Hours a day the team can work" error={!hoursOk ? 'Enter between 1 and 24.' : undefined}>
                   <input id="whpd" type="number" min={1} max={24} step={0.5} value={draft.workHoursPerDay} onChange={(e) => setDraft({ workHoursPerDay: Number(e.target.value) })} className={cn(inputBase, 'w-24')} />

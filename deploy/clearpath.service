@@ -2,7 +2,7 @@
 # Install: copy to /etc/systemd/system/clearpath.service, then
 #   systemctl daemon-reload && systemctl enable --now clearpath
 # Logs: journalctl -u clearpath -f
-# Keys go in /opt/clearpath/.env (chmod 600), never in git.
+# Keys go in /opt/clearpath/.env and MongoDB settings in /opt/clearpath/.env.mongo (chmod 600), never in git.
 
 [Unit]
 Description=ClearPath API server
@@ -15,7 +15,7 @@ WorkingDirectory=/opt/clearpath
 Environment=NODE_ENV=production
 Environment=PORT=3000
 Environment=HOST=127.0.0.1
-ExecStart=/usr/bin/node --env-file=/opt/clearpath/.env --import tsx server/index.ts
+ExecStart=/usr/bin/node --env-file=/opt/clearpath/.env --env-file-if-exists=/opt/clearpath/.env.mongo --import tsx server/index.ts
 Restart=on-failure
 RestartSec=3
 

@@ -4,6 +4,7 @@ import type { ExtractModelOutput } from '../../src/ai/contracts';
 export function mockExtractOutput(): ExtractModelOutput {
   return {
     projectName: null,
+    dueDate: null,
     members: [
       { name: 'Sam', hoursPerDay: null },
       { name: 'Priya', hoursPerDay: null },

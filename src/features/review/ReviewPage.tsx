@@ -1,10 +1,10 @@
 // S4 Review tasks: correct what the AI got wrong before trusting the graph.
 import { Fragment, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Logo } from '@/app/App';
 import type { Project, Task, TaskStatus } from '@/core/types';
 import { validate } from '@/engine';
-import { useStore } from '@/store/projects';
+import { toLocalInput, useStore } from '@/store/projects';
 import { addMember, addTask, deleteTask, removeMember, sortedTasks, splitTaskInProject, updateMember, updateTask } from '@/store/taskOps';
 import { isOversized, MAX_TASK_HOURS } from '@/core/split';
 import { OwnerSelect, TeamEditor } from '@/components/people';
@@ -13,6 +13,7 @@ import { IconAlert, IconArrowLeft, IconArrowRight, IconPlus, IconQuote, IconTras
 
 export function ReviewPage() {
   const { id = '' } = useParams();
+  const [params] = useSearchParams();
   const project = useStore((s) => s.projects[id]);
   const updateProject = useStore((s) => s.updateProject);
   const navigate = useNavigate();
@@ -21,10 +22,29 @@ export function ReviewPage() {
     return <EmptyState title="Project not found" action={<Link className="text-blue-700 underline" to="/">Back to projects</Link>}>It may have been deleted, or it was saved in a different browser.</EmptyState>;
   }
   const edit = (fn: (p: Project) => Project) => updateProject(id, fn);
-  return <ReviewTable project={project} edit={edit} onShowGraph={() => navigate(`/p/${id}`)} />;
+  return <ReviewTable project={project} edit={edit} onShowGraph={() => navigate(`/p/${id}`)} deadlineFromNotes={params.get('deadline') === 'notes'} />;
 }
 
-function ReviewTable({ project, edit, onShowGraph }: { project: Project; edit: (fn: (p: Project) => Project) => void; onShowGraph: () => void }) {
+function ReviewTable({
+  project,
+  edit,
+  onShowGraph,
+  deadlineFromNotes,
+}: {
+  project: Project;
+  edit: (fn: (p: Project) => Project) => void;
+  onShowGraph: () => void;
+  /** The deadline was read from the notes, not picked by the user. */
+  deadlineFromNotes: boolean;
+}) {
+  const [fromNotes, setFromNotes] = useState(deadlineFromNotes);
+  const setDeadline = (local: string) => {
+    const ms = Date.parse(local);
+    if (Number.isNaN(ms)) return;
+    setFromNotes(false);
+    edit((p) => ({ ...p, deadline: new Date(ms).toISOString(), updatedAt: new Date().toISOString() }));
+  };
+  const deadlinePast = Date.parse(project.deadline) <= Date.now();
   const issues = useMemo(() => validate(project), [project]);
   const errors = issues.filter((i) => i.level === 'error');
   const warnings = issues.filter((i) => i.level === 'warning');
@@ -77,6 +97,29 @@ function ReviewTable({ project, edit, onShowGraph }: { project: Project; edit: (
             {flagged > 0 ? <span className="font-normal text-slate-700">Check the {flagged} flagged rows.</span> : <span className="font-normal text-slate-700">Check anything that looks off.</span>}
           </h2>
           <p className="mt-0.5 text-sm text-slate-600">The AI is checked, not trusted. Every edit you make here is marked as yours.</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+            <label htmlFor="review-deadline" className="font-medium text-slate-800">
+              Deadline
+            </label>
+            <input
+              id="review-deadline"
+              type="datetime-local"
+              value={toLocalInput(new Date(project.deadline))}
+              onChange={(e) => setDeadline(e.target.value)}
+              aria-invalid={deadlinePast}
+              aria-describedby={fromNotes || deadlinePast ? 'review-deadline-note' : undefined}
+              className="rounded-md bg-white px-2 py-1 ring-1 ring-slate-300 focus:outline-2 focus:outline-blue-600 aria-[invalid=true]:ring-red-400"
+            />
+            {deadlinePast ? (
+              <span id="review-deadline-note" className="flex items-center gap-1 text-red-700">
+                <IconAlert size={14} /> This deadline has passed. Pick a new one.
+              </span>
+            ) : fromNotes ? (
+              <span id="review-deadline-note" className="rounded-md bg-blue-50 px-2 py-0.5 text-blue-900">
+                Taken from your notes. Change it here if that's wrong.
+              </span>
+            ) : null}
+          </div>
           {oversized.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-md bg-amber-50 px-2.5 py-1.5 text-sm text-amber-900">
               <IconAlert size={14} className="shrink-0" />

@@ -5,12 +5,13 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import * as extract from '../api/extract';
 import * as health from '../api/health';
+import * as projects from '../api/projects';
 import * as rescue from '../api/rescue';
 
 type Handler = (req: Request) => Response | Promise<Response>;
 type Module = Partial<Record<string, unknown>>;
 
-const ROUTES: Record<string, Module> = { extract, health, rescue };
+const ROUTES: Record<string, Module> = { extract, health, projects, rescue };
 
 const PORT = Number(process.env.PORT ?? 3000);
 const HOST = process.env.HOST ?? '127.0.0.1';
