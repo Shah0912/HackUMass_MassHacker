@@ -580,7 +580,7 @@ Six screens cover the need-to-have flow (paste, wait, review, dashboard); four m
 
 ### S1 Projects
 
-- Header with logo and the line "Find the task your project is waiting on".
+- Header with logo and the line "Turn a messy meeting or a rough idea into a real plan."
 - Two large actions: **New project** (to S2) and **Try the sample** (loads sample, to S5).
 - List of saved projects: name, verdict chip, task count, last updated, open, export, delete (with confirm). Import JSON button.
 - Empty state: one-paragraph explanation and the two actions.

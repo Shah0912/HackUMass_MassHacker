@@ -1,21 +1,18 @@
-// S1 Projects (landing): new project, try the sample, saved list, import/export/delete.
-import { useMemo, useRef, useState } from 'react';
+// S1 Projects (landing): new project, try the sample, saved list, export/delete.
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Logo } from './App';
 import { analyse } from '@/engine';
 import { downloadProject, useStore } from '@/store/projects';
 import { Button, Card, VerdictChip, useNow } from '@/components/ui';
-import { IconArrowRight, IconBolt, IconDownload, IconPlus, IconTrash, IconUpload } from '@/components/icons';
+import { IconArrowRight, IconBolt, IconDownload, IconPlus, IconTrash } from '@/components/icons';
 
 export function ProjectsPage() {
   const projects = useStore((s) => s.projects);
   const loadSample = useStore((s) => s.loadSample);
   const deleteProject = useStore((s) => s.deleteProject);
-  const importProject = useStore((s) => s.importProject);
   const navigate = useNavigate();
   const now = useNow();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const list = useMemo(
@@ -26,29 +23,18 @@ export function ProjectsPage() {
     [projects, now],
   );
 
-  const onImport = async (file: File | undefined) => {
-    if (!file) return;
-    const res = importProject(await file.text());
-    setImportMsg(res.ok ? { ok: true, text: `Imported ${file.name} as a new project.` } : { ok: false, text: res.message });
-    if (fileRef.current) fileRef.current.value = '';
-  };
-
   return (
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
         <Logo />
-        <Button size="sm" variant="ghost" onClick={() => fileRef.current?.click()}>
-          <IconUpload size={14} /> Import JSON
-        </Button>
-        <input ref={fileRef} type="file" accept=".json,application/json" className="sr-only" tabIndex={-1} onChange={(e) => onImport(e.target.files?.[0])} />
       </header>
 
       <main id="main" className="mx-auto max-w-5xl px-6 pb-16">
         <section className="py-10">
-          <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-slate-900">Find the task your project is waiting on.</h1>
+          <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-slate-900">Turn a messy meeting or a rough idea into a real plan.</h1>
           <p className="mt-3 max-w-2xl text-lg text-slate-600">
             You don't need a finished plan to start. A one-line idea and your team size is enough, and so is a messy meeting transcript or a feature doc. ClearPath fills
-            in the tasks, who's doing what and what waits on what, then shows the one task holding everyone up and whether you'll make the deadline.
+            in the tasks, who's doing what, how long each takes and what waits on what, then tells you whether you'll make the deadline.
           </p>
           <p className="mt-2 max-w-2xl text-sm text-slate-500">
             For example: <span className="italic">"A habit tracker app where friends keep each other on track. 3 of us, due Sunday."</span>
@@ -62,12 +48,6 @@ export function ProjectsPage() {
             </Button>
           </div>
         </section>
-
-        {importMsg && (
-          <p role="status" className={`mb-4 rounded-lg px-3 py-2 text-sm ${importMsg.ok ? 'bg-emerald-50 text-emerald-900' : 'bg-red-50 text-red-800'}`}>
-            {importMsg.text}
-          </p>
-        )}
 
         <section aria-labelledby="saved-heading">
           <h2 id="saved-heading" className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
