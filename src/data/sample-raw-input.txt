@@ -1,0 +1,19 @@
+[Mon 9:02 PM] Leo: ok repo is up, CI deploys to vercel on push. we're live lol
+[Mon 9:05 PM] Maya: nice!! I'm on the figma mockups, like halfway done
+[Mon 9:11 PM] Priya: I can take login + menu screens + checkout on the frontend
+[Mon 9:12 PM] Priya: but I literally can't start the menu screen until the menu API exists
+[Mon 9:14 PM] Sam: I'll do the backend. db schema first, should be ~3h
+[Mon 9:15 PM] Sam: then auth (3h) and the menu + orders endpoints, that's the big one, maybe 5h
+[Mon 9:20 PM] Leo: who's doing payments? judges love a working checkout
+[Mon 9:21 PM] Sam: I guess me? stripe test mode, needs the orders api first
+[Mon 9:30 PM] Maya: I'll make the pitch deck too, 3h-ish
+[Mon 9:31 PM] Leo: someone has to seed fake restaurants or the demo is empty
+[Mon 9:31 PM] Leo: not me I'm doing end to end testing on phones once checkout works
+[Tue 10:04 AM] Priya: login screen is like 2h once auth is there
+[Tue 10:06 AM] Priya: menu screen 3h. checkout no idea, it depends what Sam's api looks like
+[Tue 10:15 AM] Maya: I'll record the demo video after Leo's testing, 1.5h
+[Tue 10:16 AM] Leo: we'll probably need a bug fix pass after testing too
+[Tue 10:20 AM] Leo: and I'll write the README + devpost submission at the very end, 1h
+[Tue 10:22 AM] Maya: reminder submission is Wed 6pm!!
+[Tue 11:40 AM] Sam: haven't started the schema yet, was stuck on a lab. tonight for sure
+[Tue 11:41 AM] Priya: sam everything is waiting on you 😭

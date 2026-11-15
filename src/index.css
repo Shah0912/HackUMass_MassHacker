@@ -1,1 +1,16 @@
 @import 'tailwindcss';
+
+:root {
+  color-scheme: light;
+}
+body {
+  background: #f8fafc;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+}
+/* React Flow: keyboard focus ring on nodes */
+.react-flow__node:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 4px;
+  border-radius: 14px;
+}
