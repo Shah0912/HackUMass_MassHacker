@@ -2,6 +2,7 @@
 # Install: copy to /etc/systemd/system/clearpath.service, then
 #   systemctl daemon-reload && systemctl enable --now clearpath
 # Logs: journalctl -u clearpath -f
+# ipv4first: Vultr instances often have no working IPv6 route, and trying AAAA records first makes model calls hang until they time out.
 # Keys go in /opt/clearpath/.env and MongoDB settings in /opt/clearpath/.env.mongo (chmod 600), never in git.
 
 [Unit]
@@ -15,7 +16,7 @@ WorkingDirectory=/opt/clearpath
 Environment=NODE_ENV=production
 Environment=PORT=3000
 Environment=HOST=127.0.0.1
-ExecStart=/usr/bin/node --env-file=/opt/clearpath/.env --env-file-if-exists=/opt/clearpath/.env.mongo --import tsx server/index.ts
+ExecStart=/usr/bin/node --dns-result-order=ipv4first --env-file=/opt/clearpath/.env --env-file-if-exists=/opt/clearpath/.env.mongo --import tsx server/index.ts
 Restart=on-failure
 RestartSec=3
 
