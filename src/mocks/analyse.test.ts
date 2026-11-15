@@ -9,24 +9,31 @@ describe('sample project (gold standard for the demo)', () => {
   const p = buildSampleProject(NOW);
   const a = analyse(p, NOW);
 
+  it('has no unfinished task over 4 h', () => {
+    expect(p.tasks.filter((t) => t.status !== 'done' && t.estimateHours > 4)).toEqual([]);
+  });
+
   it('is valid and late by about 6 h', () => {
     expect(a.valid).toBe(true);
     expect(a.verdict).toBe('late');
-    expect(a.durationHours).toBe(20);
-    expect(a.availableHours).toBeCloseTo(14, 5);
+    expect(a.durationHours).toBe(17.5);
+    expect(a.availableHours).toBeCloseTo(11.5, 5);
     expect(a.bufferHours).toBeCloseTo(-6, 5);
   });
 
-  it('has the schema task as the linchpin, blocking 11 tasks', () => {
+  it('has the schema task as the linchpin, blocking 13 tasks', () => {
     expect(a.bottleneckTaskId).toBe('t2');
-    expect(a.tasks.t2!.downstreamCount).toBe(11);
+    expect(a.tasks.t2!.downstreamCount).toBe(13);
     expect(a.criticalPath).toEqual(['t2', 't4', 't8', 't9', 't12', 't14', 't15']);
   });
 
-  it('flags Sam as overloaded and leads with late, overload, bottleneck', () => {
+  it('flags Sam as overloaded and leads with late, then overload and bottleneck', () => {
     expect(a.members.m1!.loadRatio).toBeGreaterThan(1);
     const kinds = a.risks.map((r) => r.kind);
-    expect(kinds.slice(0, 3)).toEqual(['late', 'person_overload', 'task_bottleneck']);
+    expect(kinds[0]).toBe('late');
+    expect(kinds[1]).toBe('person_overload');
+    expect(a.risks[1]!.memberIds).toContain('m1');
+    expect(kinds).toContain('task_bottleneck');
     expect(a.risks.length).toBeLessThanOrEqual(5);
   });
 

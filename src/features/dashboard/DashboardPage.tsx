@@ -175,6 +175,7 @@ function Dashboard({ project }: { project: Project }) {
               onMember={(m) => setView((v) => ({ ...v, memberFilter: m }))}
               onTryAction={tryRescue}
               readOnly={false}
+              onEdit={edit}
             />
           )}
           {selectedTaskId && working.tasks.some((t) => t.id === selectedTaskId) && (
@@ -186,6 +187,7 @@ function Dashboard({ project }: { project: Project }) {
               onClose={() => selectTask(null)}
               onSelect={selectTask}
               onChange={(patch) => edit((p) => updateTask(p, selectedTaskId, patch))}
+              onEdit={edit}
               onDelete={() => {
                 edit((p) => deleteTask(p, selectedTaskId));
                 selectTask(null);

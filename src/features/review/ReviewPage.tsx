@@ -5,8 +5,10 @@ import { Logo } from '@/app/App';
 import type { Project, Task, TaskStatus } from '@/core/types';
 import { validate } from '@/engine';
 import { useStore } from '@/store/projects';
-import { addTask, deleteTask, sortedTasks, updateTask } from '@/store/taskOps';
-import { Button, ConfidenceBadge, DependencyPicker, Dot, EmptyState, STATUS_LABEL, cn } from '@/components/ui';
+import { addMember, addTask, deleteTask, removeMember, sortedTasks, splitTaskInProject, updateMember, updateTask } from '@/store/taskOps';
+import { isOversized, MAX_TASK_HOURS } from '@/core/split';
+import { OwnerSelect, TeamEditor } from '@/components/people';
+import { Button, ConfidenceBadge, DependencyPicker, EmptyState, STATUS_LABEL, cn } from '@/components/ui';
 import { IconAlert, IconArrowLeft, IconArrowRight, IconPlus, IconQuote, IconTrash } from '@/components/icons';
 
 export function ReviewPage() {
@@ -42,6 +44,19 @@ function ReviewTable({ project, edit, onShowGraph }: { project: Project; edit: (
   };
 
   const set = (taskId: string, patch: Partial<Task>) => edit((p) => updateTask(p, taskId, patch));
+  const addPerson = (name: string, hoursPerDay = 4): string | null => {
+    let newId: string | null = null;
+    edit((p) => {
+      const r = addMember(p, name, hoursPerDay);
+      newId = r.id;
+      return r.project;
+    });
+    return newId;
+  };
+  const unowned = tasks.filter((t) => !t.ownerId && t.status !== 'done').length;
+  const oversized = tasks.filter((t) => isOversized(t));
+  const taskCounts: Record<string, number> = {};
+  for (const t of tasks) if (t.ownerId) taskCounts[t.ownerId] = (taskCounts[t.ownerId] ?? 0) + 1;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -62,6 +77,17 @@ function ReviewTable({ project, edit, onShowGraph }: { project: Project; edit: (
             {flagged > 0 ? <span className="font-normal text-slate-700">Check the {flagged} flagged rows.</span> : <span className="font-normal text-slate-700">Check anything that looks off.</span>}
           </h2>
           <p className="mt-0.5 text-sm text-slate-600">The AI is checked, not trusted. Every edit you make here is marked as yours.</p>
+          {oversized.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-md bg-amber-50 px-2.5 py-1.5 text-sm text-amber-900">
+              <IconAlert size={14} className="shrink-0" />
+              <span>
+                <strong className="font-semibold">Check:</strong> {oversized.length} task{oversized.length > 1 ? 's are' : ' is'} over {MAX_TASK_HOURS} h. Break big work into smaller tasks so progress is visible.
+              </span>
+              <Button size="sm" onClick={() => edit((p) => oversized.reduce((acc, t) => splitTaskInProject(acc, t.id), p))}>
+                Split all
+              </Button>
+            </div>
+          )}
           {issues.length > 0 && (
             <ul className="mt-3 space-y-1.5">
               {[...errors, ...warnings].map((i, k) => (
@@ -83,6 +109,26 @@ function ReviewTable({ project, edit, onShowGraph }: { project: Project; edit: (
               ))}
             </ul>
           )}
+        </section>
+
+        {/* Team: add anyone the AI missed, fix hours */}
+        <section aria-labelledby="team" className="mb-5 rounded-xl bg-white p-4 ring-1 ring-slate-200">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="team" className="font-semibold text-slate-900">Team ({project.members.length})</h2>
+            <p className="text-sm text-slate-600">
+              {unowned > 0 ? (
+                <span className="text-amber-800">{unowned} task{unowned > 1 ? 's have' : ' has'} no owner. </span>
+              ) : null}
+              Missing someone? Add them here, or pick <span className="font-medium">+ Add person…</span> in any Owner box.
+            </p>
+          </div>
+          <TeamEditor
+            members={project.members}
+            taskCounts={taskCounts}
+            onUpdate={(mid, patch) => edit((p) => updateMember(p, mid, patch))}
+            onRemove={(mid) => edit((p) => removeMember(p, mid))}
+            onAdd={(name, h) => void addPerson(name, h)}
+          />
         </section>
 
         {/* Table */}
@@ -118,15 +164,14 @@ function ReviewTable({ project, edit, onShowGraph }: { project: Project; edit: (
                         />
                       </td>
                       <td className="px-3 py-2">
-                        <div className="flex items-center gap-1.5">
-                          <Dot color={project.members.find((m) => m.id === t.ownerId)?.color ?? '#cbd5e1'} />
-                          <select value={t.ownerId ?? ''} onChange={(e) => set(t.id, { ownerId: e.target.value || null })} aria-label={`Owner of ${t.title || t.id}`} className={cellInput}>
-                            <option value="">Unassigned</option>
-                            {project.members.map((m) => (
-                              <option key={m.id} value={m.id}>{m.name}</option>
-                            ))}
-                          </select>
-                        </div>
+                        <OwnerSelect
+                          value={t.ownerId}
+                          members={project.members}
+                          onChange={(ownerId) => set(t.id, { ownerId })}
+                          onAddMember={(name) => addPerson(name)}
+                          label={`Owner of ${t.title || t.id}`}
+                        />
+                        {!t.ownerId && t.status !== 'done' && <p className="mt-1 text-xs text-amber-800">No owner yet</p>}
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-1">
@@ -143,6 +188,19 @@ function ReviewTable({ project, edit, onShowGraph }: { project: Project; edit: (
                           <span className="text-slate-500">h</span>
                         </div>
                         {t.estimateInferred && <p className="mt-1 text-xs text-amber-800">Guessed by AI</p>}
+                        {isOversized(t) && (
+                          <div className="mt-1 flex items-center gap-1 text-xs text-amber-800">
+                            <IconAlert size={12} /> Over {MAX_TASK_HOURS} h
+                            <button
+                              type="button"
+                              onClick={() => edit((p) => splitTaskInProject(p, t.id))}
+                              className="font-semibold underline underline-offset-2 hover:text-amber-950"
+                              aria-label={`Split ${t.title || t.id} into tasks of at most ${MAX_TASK_HOURS} hours`}
+                            >
+                              Split
+                            </button>
+                          </div>
+                        )}
                       </td>
                       <td className="px-3 py-2">
                         <select value={t.status} onChange={(e) => set(t.id, { status: e.target.value as TaskStatus })} aria-label={`Status of ${t.title || t.id}`} className={cellInput}>

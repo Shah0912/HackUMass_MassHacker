@@ -4,6 +4,8 @@ import { fmtH } from '@/engine';
 import { Button, Dot, LoadBar, cn } from '@/components/ui';
 import { IconAlert, IconCheckCircle, IconClock, IconSparkle } from '@/components/icons';
 import { RescuePanel } from '@/features/rescue/RescuePanel';
+import { AddPersonForm, OwnerSelect } from '@/components/people';
+import { addMember, updateTask } from '@/store/taskOps';
 import type { RescueAction } from '@/ai/client';
 
 export type Tab = 'risks' | 'people' | 'rescue';
@@ -21,6 +23,7 @@ export function SidePanel(props: {
   onMember: (id: string | null) => void;
   onTryAction: (a: RescueAction) => void;
   readOnly: boolean;
+  onEdit: (fn: (p: Project) => Project) => void;
 }) {
   const { tab, onTab } = props;
   const tabs: { id: Tab; label: string }[] = [
@@ -114,7 +117,16 @@ function Risks({ analysis, activeRiskId, onRisk, onTryFix, readOnly }: Parameter
   );
 }
 
-function People({ project, analysis, memberFilter, onMember }: Parameters<typeof SidePanel>[0]) {
+function People({ project, analysis, memberFilter, onMember, onEdit, readOnly }: Parameters<typeof SidePanel>[0]) {
+  const addPerson = (name: string, hoursPerDay = 4): string | null => {
+    let id: string | null = null;
+    onEdit((p) => {
+      const r = addMember(p, name, hoursPerDay);
+      id = r.id;
+      return r.project;
+    });
+    return id;
+  };
   const unassigned = project.tasks.filter((t) => !t.cut && t.status !== 'done' && !t.ownerId);
   const members = [...project.members].sort((a, b) => (analysis.members[b.id]?.loadRatio ?? 0) - (analysis.members[a.id]?.loadRatio ?? 0));
   return (
@@ -154,8 +166,34 @@ function People({ project, analysis, memberFilter, onMember }: Parameters<typeof
       })}
       {unassigned.length > 0 && (
         <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">
-          <IconAlert size={13} className="mr-1 inline" />
-          {unassigned.length} unfinished task{unassigned.length > 1 ? 's have' : ' has'} no owner: {unassigned.map((t) => t.title).join(', ')}.
+          <p>
+            <IconAlert size={13} className="mr-1 inline" />
+            {unassigned.length} unfinished task{unassigned.length > 1 ? 's have' : ' has'} no owner{readOnly ? '.' : '. Assign them:'}
+          </p>
+          {readOnly ? (
+            <p className="mt-1">{unassigned.map((t) => t.title).join(', ')}</p>
+          ) : (
+            <ul className="mt-2 space-y-2">
+              {unassigned.map((t) => (
+                <li key={t.id}>
+                  <p className="mb-1 font-medium text-slate-900">{t.title}</p>
+                  <OwnerSelect
+                    value={null}
+                    members={project.members}
+                    onChange={(ownerId) => ownerId && onEdit((p) => updateTask(p, t.id, { ownerId }))}
+                    onAddMember={(name) => addPerson(name)}
+                    label={`Owner of ${t.title}`}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      {!readOnly && (
+        <div className="rounded-lg bg-white p-3 ring-1 ring-slate-200">
+          <p className="mb-2 text-sm font-semibold text-slate-900">Missing someone?</p>
+          <AddPersonForm onAdd={(name, h) => void addPerson(name, h)} />
         </div>
       )}
     </div>

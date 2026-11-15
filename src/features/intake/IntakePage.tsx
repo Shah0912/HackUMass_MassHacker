@@ -97,7 +97,7 @@ export function IntakePage() {
 
       <main id="main" className="mx-auto max-w-6xl px-6 pb-16">
         <h1 className="mb-1 text-2xl font-bold tracking-tight">New project</h1>
-        <p className="mb-6 text-slate-600">Paste a chat export, brief or to-do list. Messy is fine.</p>
+        <p className="mb-6 text-slate-600">Paste a meeting transcript, feature doc or project notes. Messy is fine.</p>
 
         {phase.kind === 'extracting' && <Extracting step={phase.step} onCancel={cancel} />}
         {phase.kind === 'error' && (
@@ -141,7 +141,7 @@ export function IntakePage() {
                   Project notes <span className="text-red-700">*</span>
                 </label>
                 <button type="button" className="text-sm text-blue-700 underline-offset-2 hover:underline" onClick={() => setDraft({ text: sampleRawInput, name: draft.name || 'Campus Eats' })}>
-                  Paste the sample chat
+                  Paste the sample notes
                 </button>
               </div>
               <div
@@ -158,7 +158,7 @@ export function IntakePage() {
                   id="raw"
                   value={draft.text}
                   onChange={(e) => setDraft({ text: e.target.value })}
-                  placeholder={'[Mon 9:14 PM] Sam: I\'ll do the backend, db schema first...\n[Mon 9:15 PM] Priya: I can\'t start the menu screen until the API exists'}
+                  placeholder={'Sam: I\'ll take the backend, starting with the DB schema.\nPriya: I can\'t start the menu screen until the API exists.\n\n...or paste a feature doc: goals, features, requirements.'}
                   aria-describedby="raw-help raw-count"
                   aria-invalid={tooLong || (touched && !draft.text.trim())}
                   className="block h-[440px] w-full resize-y rounded-xl bg-white p-4 font-mono text-sm leading-relaxed text-slate-800 placeholder:text-slate-400 focus:outline-none"

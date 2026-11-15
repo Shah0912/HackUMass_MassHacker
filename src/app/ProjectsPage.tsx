@@ -47,7 +47,7 @@ export function ProjectsPage() {
         <section className="py-10">
           <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-slate-900">Find the task your project is waiting on.</h1>
           <p className="mt-3 max-w-2xl text-lg text-slate-600">
-            Paste your messy group chat. Linchpin maps who's doing what and what waits on what, then shows the one task holding
+            Paste a meeting transcript or feature doc. Linchpin maps who's doing what and what waits on what, then shows the one task holding
             everyone up and whether you'll make the deadline.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">

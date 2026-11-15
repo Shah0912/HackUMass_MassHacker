@@ -1,5 +1,6 @@
-// Browser-side client for the AI endpoints. With VITE_MOCK_AI=1 (default) everything is mocked
-// locally: no network, no key. Otherwise it calls /api/extract and /api/rescue.
+// Browser-side client for the AI endpoints. Calls /api/extract and /api/rescue (Gemini or Claude,
+// chosen on the server). With VITE_MOCK_AI=1 everything is mocked locally: no network, no key.
+// "Try the sample" never calls the AI; it loads a prepared project from the store.
 //
 // Mock tricks for testing error states: put "#fail" in the pasted text for a retryable
 // UPSTREAM_ERROR, "#refuse" for a non-retryable MODEL_REFUSED.
@@ -7,8 +8,10 @@ import type { Analysis, Project, Task } from '@/core/types';
 import { memberColor } from '@/core/types';
 import { analyse, byId, fmtH } from '@/engine';
 import { buildSampleProject } from '@/mocks/sampleProject';
+import { ProjectSchema } from '@/core/schema';
+import type { RescueProposal, RescueRequest } from '@/ai/contracts';
 
-export const MOCK_AI = import.meta.env.VITE_MOCK_AI !== '0';
+export const MOCK_AI = import.meta.env.VITE_MOCK_AI === '1';
 
 export interface ExtractInput {
   name: string;
@@ -66,7 +69,14 @@ const wait = (ms: number, signal?: AbortSignal) =>
 // ---------------- Extract ----------------
 
 export async function extractProject(input: ExtractInput, signal?: AbortSignal): Promise<Project> {
-  if (!MOCK_AI) return post<Project>('/api/extract', input, signal);
+  if (!MOCK_AI) {
+    const data = await post<unknown>('/api/extract', input, signal);
+    const parsed = ProjectSchema.safeParse(data);
+    if (!parsed.success) {
+      throw new ApiClientError('MODEL_INVALID_OUTPUT', 'The server returned a project we could not read. Try again.', true);
+    }
+    return parsed.data as Project;
+  }
 
   await wait(2400, signal);
   if (input.text.includes('#refuse')) {
@@ -132,6 +142,33 @@ export function applyRescueAction(project: Project, a: Pick<RescueAction, 'kind'
   }
 }
 
+/** Compact, raw-text-free view for the model: IDs, hours and computed metrics only. */
+function toRescueRequest(project: Project, a: Analysis): RescueRequest {
+  return {
+    tasks: project.tasks
+      .filter((t) => !t.cut)
+      .map((t) => {
+        const m = a.tasks[t.id];
+        return {
+          id: t.id,
+          title: t.title,
+          ownerId: t.ownerId,
+          remainingHours: m?.remainingHours ?? 0,
+          status: t.status,
+          dependsOn: t.dependsOn,
+          slackHours: m?.slackHours ?? 0,
+          isCritical: m?.isCritical ?? false,
+          downstreamCount: m?.downstreamCount ?? 0,
+        };
+      }),
+    members: project.members.map((m) => ({ id: m.id, name: m.name, loadRatio: a.members[m.id]?.loadRatio ?? 0 })),
+    durationHours: a.durationHours,
+    availableHours: a.availableHours,
+    bufferHours: a.bufferHours,
+    risks: a.risks.slice(0, 5).map((r) => ({ kind: r.kind, title: r.title, detail: r.detail })),
+  };
+}
+
 const worstLoad = (an: Analysis) => Math.max(0, ...Object.values(an.members).map((m) => m.loadRatio));
 
 /** Mock "model" proposals, then the real code check: apply each to a copy, keep only what helps. */
@@ -140,7 +177,7 @@ export async function generateRescuePlan(project: Project, now: Date, signal?: A
   let proposals: Omit<RescueAction, 'id' | 'bufferGainHours' | 'worstLoadBefore' | 'worstLoadAfter'>[];
 
   if (!MOCK_AI) {
-    proposals = await post('/api/rescue', { project, analysis: before }, signal);
+    proposals = before.valid ? await post<RescueProposal[]>('/api/rescue', toRescueRequest(project, before), signal) : [];
   } else {
     await wait(1800, signal);
     proposals = mockProposals(project, before);

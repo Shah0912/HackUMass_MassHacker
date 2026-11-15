@@ -3,6 +3,8 @@ import { useEffect, useRef } from 'react';
 import type { Analysis, Project, Task, TaskStatus } from '@/core/types';
 import { fmtH } from '@/engine';
 import { Button, DependencyPicker, Dot, STATUS_LABEL, StatusBadge, cn } from '@/components/ui';
+import { OwnerSelect } from '@/components/people';
+import { addMember } from '@/store/taskOps';
 import { IconFlag, IconPin, IconQuote, IconScissors, IconTrash, IconUndo, IconX } from '@/components/icons';
 
 export function TaskDrawer({
@@ -13,6 +15,7 @@ export function TaskDrawer({
   onSelect,
   onChange,
   onDelete,
+  onEdit,
   whatIf,
 }: {
   project: Project;
@@ -22,6 +25,8 @@ export function TaskDrawer({
   onSelect: (id: string) => void;
   onChange: (patch: Partial<Task>) => void;
   onDelete: () => void;
+  /** Whole-project edit (used to add a person the AI missed). */
+  onEdit: (fn: (p: Project) => Project) => void;
   whatIf: boolean;
 }) {
   const task = project.tasks.find((t) => t.id === taskId);
@@ -81,15 +86,24 @@ export function TaskDrawer({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm">
+          <div className="block text-sm">
             <span className="mb-1 block text-xs font-medium text-slate-500">Owner</span>
-            <select value={task.ownerId ?? ''} onChange={(e) => onChange({ ownerId: e.target.value || null })} className={inputCls}>
-              <option value="">Unassigned</option>
-              {project.members.map((mm) => (
-                <option key={mm.id} value={mm.id}>{mm.name}</option>
-              ))}
-            </select>
-          </label>
+            <OwnerSelect
+              value={task.ownerId}
+              members={project.members}
+              onChange={(ownerId) => onChange({ ownerId })}
+              onAddMember={(name) => {
+                let id: string | null = null;
+                onEdit((p) => {
+                  const r = addMember(p, name);
+                  id = r.id;
+                  return r.project;
+                });
+                return id;
+              }}
+              label="Owner"
+            />
+          </div>
           <label className="block text-sm">
             <span className="mb-1 block text-xs font-medium text-slate-500">Status</span>
             <select value={task.status} onChange={(e) => onChange({ status: e.target.value as TaskStatus })} className={inputCls}>

@@ -1,19 +1,25 @@
-[Mon 9:02 PM] Leo: ok repo is up, CI deploys to vercel on push. we're live lol
-[Mon 9:05 PM] Maya: nice!! I'm on the figma mockups, like halfway done
-[Mon 9:11 PM] Priya: I can take login + menu screens + checkout on the frontend
-[Mon 9:12 PM] Priya: but I literally can't start the menu screen until the menu API exists
-[Mon 9:14 PM] Sam: I'll do the backend. db schema first, should be ~3h
-[Mon 9:15 PM] Sam: then auth (3h) and the menu + orders endpoints, that's the big one, maybe 5h
-[Mon 9:20 PM] Leo: who's doing payments? judges love a working checkout
-[Mon 9:21 PM] Sam: I guess me? stripe test mode, needs the orders api first
-[Mon 9:30 PM] Maya: I'll make the pitch deck too, 3h-ish
-[Mon 9:31 PM] Leo: someone has to seed fake restaurants or the demo is empty
-[Mon 9:31 PM] Leo: not me I'm doing end to end testing on phones once checkout works
-[Tue 10:04 AM] Priya: login screen is like 2h once auth is there
-[Tue 10:06 AM] Priya: menu screen 3h. checkout no idea, it depends what Sam's api looks like
-[Tue 10:15 AM] Maya: I'll record the demo video after Leo's testing, 1.5h
-[Tue 10:16 AM] Leo: we'll probably need a bug fix pass after testing too
-[Tue 10:20 AM] Leo: and I'll write the README + devpost submission at the very end, 1h
-[Tue 10:22 AM] Maya: reminder submission is Wed 6pm!!
-[Tue 11:40 AM] Sam: haven't started the schema yet, was stuck on a lab. tonight for sure
-[Tue 11:41 AM] Priya: sam everything is waiting on you 😭
+Campus Eats – team sync, Monday 9:00 PM (auto-generated transcript)
+
+Leo: Okay, quick status round. Repo is up and CI deploys to Vercel on every push, so we're live.
+Maya: Nice. I'm on the Figma mockups, about halfway done.
+Priya: I can take the login, menu and checkout screens on the frontend. But I can't start the menu screen until the menu API exists.
+Sam: I'll do the backend. Database schema first, should be about three hours.
+Sam: Then auth, three hours, and the menu and orders endpoints. That's the big one, maybe five hours.
+Leo: Who's doing payments? Judges love a working checkout.
+Sam: I guess me? Stripe test mode. It needs the orders API first.
+Maya: I'll make the pitch deck too, three hours-ish.
+Leo: Someone has to seed fake restaurants or the demo is empty.
+Leo: Not me, I'm doing end-to-end testing on phones once checkout works.
+Priya: Login screen is about two hours once auth is there. Menu screen, three. Checkout, no idea, it depends what Sam's API looks like.
+Maya: I'll record the demo video after Leo's testing, an hour and a half.
+Leo: We'll probably need a bug fix pass after testing too.
+Leo: And I'll write the README and the Devpost submission at the very end, one hour.
+Leo: Oh, one more thing. I stopped by the sponsor booth this afternoon. To qualify for the accessibility prize, the menu needs dietary filters, like vegan and gluten-free.
+Priya: That's new. I don't have room for it.
+Maya: I'll take the dietary filters, about two hours. It needs the menu API to return the tags though.
+Sam: Fine, I'll add the tags to the menu endpoint, that's part of the five hours.
+Leo: And we agreed to drop the live delivery tracking map, right? Not enough time.
+Sam: Yeah, cut it.
+Maya: Reminder, submission is Wednesday at 6 PM.
+Sam: Honestly I haven't started the schema yet, I was stuck on a lab. Tonight for sure.
+Priya: Sam, everything is waiting on you.
