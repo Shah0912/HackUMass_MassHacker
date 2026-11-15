@@ -2,6 +2,7 @@
 // "late by ~6 h". Built to match src/data/sample-raw-input.txt.
 import type { Member, Project, Task } from '@/core/types';
 import { memberColor } from '@/core/types';
+import { uuid } from '@/store/uuid';
 import sampleRawInput from '@/data/sample-raw-input.txt?raw';
 
 export { sampleRawInput };
@@ -42,7 +43,7 @@ export function buildSampleProject(now: Date = new Date()): Project {
   const iso = now.toISOString();
   return {
     schemaVersion: 1,
-    id: crypto.randomUUID(),
+    id: uuid(),
     name: 'Campus Eats (sample)',
     deadline: new Date(now.getTime() + SAMPLE_DEADLINE_OFFSET_HOURS * 3_600_000).toISOString(),
     workHoursPerDay: 6,

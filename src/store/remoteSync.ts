@@ -5,6 +5,7 @@
 import type { Project } from '@/core/types';
 import { useStore } from './projects';
 import { diffProjects, mergeProjects } from './sync';
+import { uuid } from './uuid';
 
 const WORKSPACE_KEY = 'clearpath:workspace';
 const WORKSPACE_HEADER = 'x-clearpath-workspace';
@@ -54,7 +55,7 @@ export function getWorkspaceId(): string {
   }
   const saved = readLocal(WORKSPACE_KEY);
   if (saved && WORKSPACE_RE.test(saved)) return saved;
-  const fresh = crypto.randomUUID();
+  const fresh = uuid();
   writeLocal(WORKSPACE_KEY, fresh);
   return fresh;
 }

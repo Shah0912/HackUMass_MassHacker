@@ -5,6 +5,7 @@ import { createJSONStorage, persist, type StateStorage } from 'zustand/middlewar
 import type { Project } from '@/core/types';
 import { ProjectSchema } from '@/core/schema';
 import { buildSampleProject } from '@/mocks/sampleProject';
+import { uuid } from './uuid';
 
 export interface IntakeDraft {
   name: string;
@@ -122,7 +123,7 @@ export const useStore = create<State>()(
         const parsed = ProjectSchema.safeParse(raw);
         if (!parsed.success) return { ok: false, message: "That file isn't a ClearPath project, so nothing was imported." };
         const now = new Date().toISOString();
-        const p: Project = { ...parsed.data, id: crypto.randomUUID(), updatedAt: now };
+        const p: Project = { ...parsed.data, id: uuid(), updatedAt: now };
         return { ok: true, id: get().saveProject(p) };
       },
 
